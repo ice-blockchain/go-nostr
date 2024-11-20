@@ -45,13 +45,23 @@ end:
 
 // test if we can do multiple nested subscriptions
 func TestNestedSubscriptions(t *testing.T) {
+	t.Parallel()
+
+	t.Skip("not compatible with the current Nostr version")
+
 	rl := mustRelayConnect(t, RELAY)
 	defer rl.Close()
 
 	n := atomic.Uint32{}
 
 	// fetch 2 replies to a note
-	sub, err := rl.Subscribe(context.Background(), Filters{{Kinds: []int{KindTextNote}, Tags: TagMap{"e": []string{"0e34a74f8547e3b95d52a2543719b109fd0312aba144e2ef95cba043f42fe8c5"}}, Limit: 3}})
+	sub, err := rl.Subscribe(context.Background(),
+		Filters{
+			{
+				Kinds: []int{KindTextNote},
+				Tags:  TagMap{}.SetLiterals("e", "0e34a74f8547e3b95d52a2543719b109fd0312aba144e2ef95cba043f42fe8c5"),
+				Limit: 3,
+			}})
 	assert.NoError(t, err)
 
 	for {

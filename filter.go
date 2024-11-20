@@ -7,23 +7,66 @@ import (
 	"github.com/mailru/easyjson"
 )
 
-type Filters []Filter
+type (
+	TagValues []*string
 
-type Filter struct {
-	IDs     []string
-	Kinds   []int
-	Authors []string
-	Tags    TagMap
-	Since   *Timestamp
-	Until   *Timestamp
-	Limit   int
-	Search  string
+	TagMap map[string][]TagValues
 
-	// LimitZero is or must be set when there is a "limit":0 in the filter, and not when "limit" is just omitted
-	LimitZero bool `json:"-"`
+	Filter struct {
+		IDs     []string
+		Kinds   []int
+		Authors []string
+		Tags    TagMap
+		Since   *Timestamp
+		Until   *Timestamp
+		Limit   int
+		Search  string
+
+		// LimitZero is or must be set when there is a "limit":0 in the filter, and not when "limit" is just omitted
+		LimitZero bool `json:"-"`
+	}
+
+	Filters []Filter
+)
+
+func (m TagMap) SetLiterals(tag string, values ...string) TagMap {
+	tagValues := make(TagValues, len(values))
+	for i := range values {
+		tagValues[i] = &values[i]
+	}
+
+	return m.Set(tag, tagValues...)
 }
 
-type TagMap map[string][]string
+func (m TagMap) Set(tag string, values ...*string) TagMap {
+	m[tag] = []TagValues{values}
+
+	return m
+}
+
+func (m TagMap) Append(tag string, values ...*string) TagMap {
+	m[tag] = append(m[tag], values)
+
+	return m
+}
+
+func (m TagMap) HasValues(tag string) bool {
+	for _, values := range m[tag] {
+		if !values.Empty() {
+			return true
+		}
+	}
+	return false
+}
+
+func (v TagValues) Empty() bool {
+	for i := range v {
+		if v[i] != nil {
+			return false
+		}
+	}
+	return true
+}
 
 func (eff Filters) String() string {
 	j, _ := json.Marshal(eff)
@@ -86,12 +129,31 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 		return false
 	}
 
-	for f, v := range ef.Tags {
-		if v != nil && !event.Tags.ContainsAny(f, v) {
-			return false
+	valuesOf := func(name string) Tag {
+		for _, tag := range event.Tags {
+			if tag.Key() == name {
+				return tag[1:] // Skip the tag name.
+			}
 		}
+		return nil
 	}
 
+	for tag, values := range ef.Tags {
+		eventTagValues := valuesOf(tag)
+		if eventTagValues == nil {
+			return false
+		}
+		for i := range values {
+			for j := range values[i] {
+				if values[i][j] == nil {
+					continue
+				}
+				if j >= len(eventTagValues) || *values[i][j] != eventTagValues[j] {
+					return false
+				}
+			}
+		}
+	}
 	return true
 }
 
@@ -113,12 +175,24 @@ func FilterEqual(a Filter, b Filter) bool {
 	}
 
 	for f, av := range a.Tags {
-		if bv, ok := b.Tags[f]; !ok {
+		bv, ok := b.Tags[f]
+		if !ok {
 			return false
-		} else {
-			if !similar(av, bv) {
+		}
+
+		ok = slices.EqualFunc(av, bv, func(a, b TagValues) bool {
+			if len(a) != len(b) {
 				return false
 			}
+			for i := range len(a) {
+				if !arePointerValuesEqual(a[i], b[i]) {
+					return false
+				}
+			}
+			return true
+		})
+		if !ok {
+			return false
 		}
 	}
 
@@ -207,7 +281,15 @@ func GetTheoreticalLimit(filter Filter) int {
 				}
 			}
 			if allAreAddressable {
-				return len(filter.Authors) * len(filter.Kinds) * len(filter.Tags["d"])
+				var dlen int
+				for _, values := range filter.Tags["d"] {
+					for _, value := range values {
+						if value != nil {
+							dlen++
+						}
+					}
+				}
+				return len(filter.Authors) * len(filter.Kinds) * dlen
 			}
 		}
 	}

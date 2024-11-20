@@ -141,9 +141,9 @@ func (sub *Subscription) Close() {
 
 // Sub sets sub.Filters and then calls sub.Fire(ctx).
 // The subscription will be closed if the context expires.
-func (sub *Subscription) Sub(_ context.Context, filters Filters) {
+func (sub *Subscription) Sub(_ context.Context, filters Filters) error {
 	sub.Filters = filters
-	sub.Fire()
+	return sub.Fire()
 }
 
 // Fire sends the "REQ" command to the relay.

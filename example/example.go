@@ -36,13 +36,11 @@ func main() {
 	// create filters
 	var filters nostr.Filters
 	if _, v, err := nip19.Decode(npub); err == nil {
-		t := make(map[string][]string)
 		// making a "p" tag for the above public key.
 		// this filters for messages tagged with the user, mainly replies.
-		t["p"] = []string{v.(string)}
 		filters = []nostr.Filter{{
 			Kinds: []int{nostr.KindTextNote},
-			Tags:  t,
+			Tags:  nostr.TagMap{}.SetLiterals("p", v.(string)),
 			// limit = 3, get the three most recent notes
 			Limit: 3,
 		}}
