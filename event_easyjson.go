@@ -25,7 +25,6 @@ func easyjsonF642ad3eDecodeGithubComNbdWtfGoNostr(in *jlexer.Lexer, out *Event) 
 		in.Skip()
 		return
 	}
-	out.extra = make(map[string]any)
 	in.Delim('{')
 	for !in.IsDelim('}') {
 		key := in.UnsafeFieldName(true)
@@ -88,8 +87,6 @@ func easyjsonF642ad3eDecodeGithubComNbdWtfGoNostr(in *jlexer.Lexer, out *Event) 
 			out.Content = in.String()
 		case "sig":
 			out.Sig = in.String()
-		default:
-			out.extra[key] = in.Interface()
 		}
 		in.WantComma()
 	}
@@ -156,12 +153,6 @@ func easyjsonF642ad3eEncodeGithubComNbdWtfGoNostr(out *jwriter.Writer, in Event)
 			const prefix string = ",\"sig\":"
 			out.RawString(prefix)
 			out.String(in.Sig)
-		}
-	}
-	{
-		for key, value := range in.extra {
-			out.RawString(",\"" + key + "\":")
-			out.Raw(json.Marshal(value))
 		}
 	}
 	out.RawByte('}')
