@@ -3,6 +3,7 @@ package nostr
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -11,10 +12,15 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func ParseMessage(message []byte) Envelope {
+var (
+	ErrMessageUnknown = errors.New("unknown message")
+	ErrMessageParse   = errors.New("parse message")
+)
+
+func ParseMessage(message []byte) (Envelope, error) {
 	firstComma := bytes.Index(message, []byte{','})
 	if firstComma == -1 {
-		return nil
+		return nil, ErrMessageUnknown
 	}
 	label := message[0:firstComma]
 
@@ -42,13 +48,13 @@ func ParseMessage(message []byte) Envelope {
 		x := CloseEnvelope("")
 		v = &x
 	default:
-		return nil
+		return nil, ErrMessageUnknown
 	}
 
 	if err := v.UnmarshalJSON(message); err != nil {
-		return nil
+		return nil, errors.Join(ErrMessageParse, err)
 	}
-	return v
+	return v, nil
 }
 
 type Envelope interface {

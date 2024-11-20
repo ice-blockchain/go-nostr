@@ -218,8 +218,8 @@ func (r *Relay) ConnectWithTLS(ctx context.Context, tlsConfig *tls.Config) error
 
 			message := buf.Bytes()
 			debugLogf("{%s} %v\n", r.URL, message)
-			envelope := ParseMessage(message)
-			if envelope == nil {
+			envelope, err := ParseMessage(message)
+			if err != nil {
 				if r.customHandler != nil {
 					r.customHandler(message)
 				}
