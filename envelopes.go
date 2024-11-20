@@ -77,33 +77,76 @@ var (
 
 type EventEnvelope struct {
 	SubscriptionID *string
-	Event
+	Events         []*Event
 }
 
 func (_ EventEnvelope) Label() string { return "EVENT" }
+
+func (v EventEnvelope) String() string {
+	j, _ := json.Marshal(v)
+	return string(j)
+}
 
 func (v *EventEnvelope) UnmarshalJSON(data []byte) error {
 	r := gjson.ParseBytes(data)
 	arr := r.Array()
 	switch len(arr) {
+	case 0, 1:
+		return fmt.Errorf("failed to decode EVENT envelope: unknown array len: %v", len(arr))
+
+	// No subscription ID: ["EVENT", event].
 	case 2:
-		return easyjson.Unmarshal([]byte(arr[1].Raw), &v.Event)
-	case 3:
-		v.SubscriptionID = &arr[1].Str
-		return easyjson.Unmarshal([]byte(arr[2].Raw), &v.Event)
+		var ev Event
+
+		err := easyjson.Unmarshal([]byte(arr[1].Raw), &ev)
+		if err == nil {
+			v.Events = []*Event{&ev}
+
+			return nil
+		}
+
+		return err
+
+	// With multiple events: ["EVENT", [optional subscriptionID], <event1>, [event2], ...].
 	default:
-		return fmt.Errorf("failed to decode EVENT envelope")
+		jsonEvents := arr[1:] // Skip the first element, which is the label.
+		if jsonEvents[0].Type == gjson.String {
+			v.SubscriptionID = &jsonEvents[0].Str
+			jsonEvents = jsonEvents[1:]
+		} else if jsonEvents[0].Type == gjson.Null {
+			v.SubscriptionID = nil
+			jsonEvents = jsonEvents[1:]
+		}
+		v.Events = make([]*Event, 0, len(jsonEvents))
+		for i := range jsonEvents {
+			var ev Event
+			if err := easyjson.Unmarshal([]byte(jsonEvents[i].Raw), &ev); err != nil {
+				return fmt.Errorf("%w -- on event %d", err, i)
+			}
+			v.Events = append(v.Events, &ev)
+		}
 	}
+	return nil
 }
 
 func (v EventEnvelope) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{NoEscapeHTML: true}
 	w.RawString(`["EVENT",`)
 	if v.SubscriptionID != nil {
-		w.RawString(`"` + *v.SubscriptionID + `",`)
+		w.RawString(`"` + *v.SubscriptionID + `"`)
+		if len(v.Events) > 0 {
+			w.RawByte(',')
+		}
 	}
-	v.Event.MarshalEasyJSON(&w)
+
+	for i := range v.Events {
+		v.Events[i].MarshalEasyJSON(&w)
+		if i < len(v.Events)-1 {
+			w.RawByte(',')
+		}
+	}
 	w.RawString(`]`)
+
 	return w.BuildBytes()
 }
 

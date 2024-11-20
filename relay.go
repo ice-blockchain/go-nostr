@@ -248,22 +248,24 @@ func (r *Relay) ConnectWithTLS(ctx context.Context, tlsConfig *tls.Config) error
 					// InfoLogger.Printf("{%s} no subscription with id '%s'\n", r.URL, *env.SubscriptionID)
 					continue
 				} else {
-					// check if the event matches the desired filter, ignore otherwise
-					if !subscription.match(&env.Event) {
-						InfoLogger.Printf("{%s} filter does not match: %v ~ %v\n", r.URL, subscription.Filters, env.Event)
-						continue
-					}
-
-					// check signature, ignore invalid, except from trusted (AssumeValid) relays
-					if !r.AssumeValid {
-						if ok, _ := env.Event.CheckSignature(); !ok {
-							InfoLogger.Printf("{%s} bad signature on %s\n", r.URL, env.Event.ID)
+					for _, event := range env.Events {
+						// check if the event matches the desired filter, ignore otherwise
+						if !subscription.match(event) {
+							InfoLogger.Printf("{%s} filter does not match: %v ~ %v\n", r.URL, subscription.Filters, event)
 							continue
 						}
-					}
 
-					// dispatch this to the internal .events channel of the subscription
-					subscription.dispatchEvent(&env.Event)
+						// check signature, ignore invalid, except from trusted (AssumeValid) relays
+						if !r.AssumeValid {
+							if ok, _ := event.CheckSignature(); !ok {
+								InfoLogger.Printf("{%s} bad signature on %s\n", r.URL, event.ID)
+								continue
+							}
+						}
+
+						// dispatch this to the internal .events channel of the subscription
+						subscription.dispatchEvent(event)
+					}
 				}
 			case *EOSEEnvelope:
 				if subscription, ok := r.Subscriptions.Load(subIdToSerial(string(*env))); ok {
@@ -303,7 +305,7 @@ func (r *Relay) Write(msg []byte) <-chan error {
 
 // Publish sends an "EVENT" command to the relay r as in NIP-01 and waits for an OK response.
 func (r *Relay) Publish(ctx context.Context, event Event) error {
-	return r.publish(ctx, event.ID, &EventEnvelope{Event: event})
+	return r.publish(ctx, event.ID, &EventEnvelope{Events: []*Event{&event}})
 }
 
 // Auth sends an "AUTH" command client->relay as in NIP-42 and waits for an OK response.
