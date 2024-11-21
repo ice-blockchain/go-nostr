@@ -7,16 +7,18 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/websocket"
 )
 
 func TestPublish(t *testing.T) {
+	t.Parallel()
+
 	// test note to be sent over websocket
 	priv, pub := makeKeyPair(t)
 	textNote := Event{
@@ -27,7 +29,7 @@ func TestPublish(t *testing.T) {
 		PubKey:    pub,
 	}
 	err := textNote.Sign(priv)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// fake relay server
 	var mu sync.Mutex // guards published to satisfy go test -race
@@ -39,27 +41,29 @@ func TestPublish(t *testing.T) {
 		// verify the client sent exactly the textNote
 		var raw []json.RawMessage
 		err := websocket.JSON.Receive(conn, &raw)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		event := parseEventMessage(t, raw)
-		assert.True(t, bytes.Equal(event.Serialize(), textNote.Serialize()))
+		require.True(t, bytes.Equal(event.Serialize(), textNote.Serialize()))
 
 		// send back an ok nip-20 command result
 		res := []any{"OK", textNote.ID, true, ""}
 		err = websocket.JSON.Send(conn, res)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 	defer ws.Close()
 
 	// connect a client and send the text note
 	rl := mustRelayConnect(t, ws.URL)
 	err = rl.Publish(context.Background(), textNote)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.True(t, published, "fake relay server saw no event")
+	require.True(t, published, "fake relay server saw no event")
 }
 
 func TestPublishBlocked(t *testing.T) {
+	t.Parallel()
+
 	// test note to be sent over websocket
 	textNote := Event{Kind: KindTextNote, Content: "hello"}
 	textNote.ID = textNote.GetID()
@@ -69,7 +73,7 @@ func TestPublishBlocked(t *testing.T) {
 		// discard received message; not interested
 		var raw []json.RawMessage
 		err := websocket.JSON.Receive(conn, &raw)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// send back a not ok nip-20 command result
 		res := []any{"OK", textNote.ID, false, "blocked"}
@@ -80,10 +84,12 @@ func TestPublishBlocked(t *testing.T) {
 	// connect a client and send a text note
 	rl := mustRelayConnect(t, ws.URL)
 	err := rl.Publish(context.Background(), textNote)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestPublishWriteFailed(t *testing.T) {
+	t.Parallel()
+
 	// test note to be sent over websocket
 	textNote := Event{Kind: KindTextNote, Content: "hello"}
 	textNote.ID = textNote.GetID()
@@ -100,10 +106,12 @@ func TestPublishWriteFailed(t *testing.T) {
 	// Force brief period of time so that publish always fails on closed socket.
 	time.Sleep(1 * time.Millisecond)
 	err := rl.Publish(context.Background(), textNote)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestConnectContext(t *testing.T) {
+	t.Parallel()
+
 	// fake relay server
 	var mu sync.Mutex // guards connected to satisfy go test -race
 	var connected bool
@@ -119,16 +127,18 @@ func TestConnectContext(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	r, err := RelayConnect(ctx, ws.URL)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	defer r.Close()
 
 	mu.Lock()
 	defer mu.Unlock()
-	assert.True(t, connected, "fake relay server saw no client connect")
+	require.True(t, connected, "fake relay server saw no client connect")
 }
 
 func TestConnectContextCanceled(t *testing.T) {
+	t.Parallel()
+
 	// fake relay server
 	ws := newWebsocketServer(discardingHandler)
 	defer ws.Close()
@@ -137,10 +147,12 @@ func TestConnectContextCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // make ctx expired
 	_, err := RelayConnect(ctx, ws.URL)
-	assert.ErrorIs(t, err, context.Canceled)
+	require.ErrorIs(t, err, context.Canceled)
 }
 
 func TestConnectWithOrigin(t *testing.T) {
+	t.Parallel()
+
 	// fake relay server
 	// default handler requires origin golang.org/x/net/websocket
 	ws := httptest.NewServer(websocket.Handler(discardingHandler))
@@ -152,7 +164,7 @@ func TestConnectWithOrigin(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	err := r.Connect(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func discardingHandler(conn *websocket.Conn) {
@@ -178,7 +190,7 @@ func makeKeyPair(t *testing.T) (priv, pub string) {
 
 	privkey := GeneratePrivateKey()
 	pubkey, err := GetPublicKey(privkey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return privkey, pubkey
 }
@@ -195,14 +207,12 @@ func mustRelayConnect(t *testing.T, url string) *Relay {
 func parseEventMessage(t *testing.T, raw []json.RawMessage) Event {
 	t.Helper()
 
-	assert.Condition(t, func() (success bool) {
-		return len(raw) >= 2
-	})
+	require.GreaterOrEqual(t, len(raw), 2)
 
 	var typ string
 	err := json.Unmarshal(raw[0], &typ)
-	assert.NoError(t, err)
-	assert.Equal(t, "EVENT", typ)
+	require.NoError(t, err)
+	require.Equal(t, "EVENT", typ)
 
 	var event Event
 	err = json.Unmarshal(raw[1], &event)
@@ -211,27 +221,57 @@ func parseEventMessage(t *testing.T, raw []json.RawMessage) Event {
 	return event
 }
 
-func parseSubscriptionMessage(t *testing.T, raw []json.RawMessage) (subid string, filters []Filter) {
-	t.Helper()
+func TestPublishMany(t *testing.T) {
+	t.Parallel()
 
-	assert.Greater(t, len(raw), 3)
+	const (
+		nowUnix = 1672068534
+		evCount = 42
+	)
 
-	var typ string
-	err := json.Unmarshal(raw[0], &typ)
+	var events []*Event
+	priv, pub := makeKeyPair(t)
 
-	assert.NoError(t, err)
-	assert.Equal(t, "REQ", typ)
+	t.Run("GenerateEvents", func(t *testing.T) {
+		for i := range evCount {
+			ev := Event{
+				Kind:      KindTextNote,
+				Content:   "hello " + strconv.Itoa(i),
+				CreatedAt: Timestamp(nowUnix + i),
+				Tags:      Tags{[]string{"foo", "bar"}},
+				PubKey:    pub,
+			}
+			err := ev.Sign(priv)
+			require.NoError(t, err)
+			events = append(events, &ev)
+		}
+		require.Len(t, events, evCount)
+	})
 
-	var id string
-	err = json.Unmarshal(raw[1], &id)
-	assert.NoError(t, err)
+	ch := make(chan bool, 1)
+	ws := newWebsocketServer(func(conn *websocket.Conn) {
+		var e EventEnvelope
 
-	var ff []Filter
-	for _, b := range raw[2:] {
-		var f Filter
-		err := json.Unmarshal(b, &f)
-		assert.NoError(t, err)
-		ff = append(ff, f)
-	}
-	return id, ff
+		err := websocket.JSON.Receive(conn, &e)
+		require.NoError(t, err)
+
+		require.Len(t, e.Events, evCount)
+		require.Equal(t, events, e.Events)
+
+		// Send back an ok nip-20 command result.
+		for i := range e.Events {
+			err := websocket.JSON.Send(conn, &OKEnvelope{EventID: e.Events[i].ID, OK: true})
+			require.NoError(t, err)
+		}
+
+		ch <- true
+	})
+	defer ws.Close()
+
+	rl := mustRelayConnect(t, ws.URL)
+	require.NoError(t, rl.PublishMany(context.Background()))
+	err := rl.PublishMany(context.Background(), events...)
+	require.NoError(t, err)
+
+	require.True(t, <-ch, "fake relay server saw no events")
 }
