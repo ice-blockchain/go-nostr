@@ -46,7 +46,7 @@ func (sys *System) FetchSpecificEvent(
 	case nostr.EntityPointer:
 		author = v.PublicKey
 		filter.Authors = []string{v.PublicKey}
-		filter.Tags = nostr.TagMap{"d": []string{v.Identifier}}
+		filter.Tags = nostr.TagMap{}.SetLiterals("d", v.Identifier)
 		filter.Kinds = []int{v.Kind}
 		relays = append(relays, v.Relays...)
 		relays = appendUnique(relays, sys.FallbackRelays.Next())

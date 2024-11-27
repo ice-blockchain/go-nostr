@@ -101,9 +101,7 @@ func (r Repository) ToEvent() *nostr.Event {
 func (repo Repository) FetchState(ctx context.Context, s nostr.RelayStore) *RepositoryState {
 	res, _ := s.QuerySync(ctx, nostr.Filter{
 		Kinds: []int{nostr.KindRepositoryState},
-		Tags: nostr.TagMap{
-			"d": []string{repo.Tags.GetD()},
-		},
+		Tags:  nostr.TagMap{}.SetLiterals("d", repo.Tags.GetD()),
 	})
 
 	if len(res) == 0 {
@@ -117,9 +115,7 @@ func (repo Repository) FetchState(ctx context.Context, s nostr.RelayStore) *Repo
 func (repo Repository) GetPatchesSync(ctx context.Context, s nostr.RelayStore) []Patch {
 	res, _ := s.QuerySync(ctx, nostr.Filter{
 		Kinds: []int{nostr.KindPatch},
-		Tags: nostr.TagMap{
-			"a": []string{fmt.Sprintf("%d:%s:%s", nostr.KindRepositoryAnnouncement, repo.Event.PubKey, repo.ID)},
-		},
+		Tags:  nostr.TagMap{}.SetLiterals("a", fmt.Sprintf("%d:%s:%s", nostr.KindRepositoryAnnouncement, repo.Event.PubKey, repo.ID)),
 	})
 	patches := make([]Patch, len(res))
 	for i, evt := range res {

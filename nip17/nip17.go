@@ -156,7 +156,7 @@ func ListenForMessages(
 		for ie := range pool.SubMany(ctx, ourRelays, nostr.Filters{
 			{
 				Kinds: []int{nostr.KindGiftWrap},
-				Tags:  nostr.TagMap{"p": []string{pk}},
+				Tags:  nostr.TagMap{}.SetLiterals("p", pk),
 				Since: &since,
 			},
 		}) {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -218,8 +219,8 @@ func (r *Relay) ConnectWithTLS(ctx context.Context, tlsConfig *tls.Config) error
 
 			message := buf.Bytes()
 			debugLogf("{%s} %v\n", r.URL, message)
-			envelope := ParseMessage(message)
-			if envelope == nil {
+			envelope, err := ParseMessage(message)
+			if err != nil {
 				if r.customHandler != nil {
 					r.customHandler(message)
 				}
@@ -248,22 +249,24 @@ func (r *Relay) ConnectWithTLS(ctx context.Context, tlsConfig *tls.Config) error
 					// InfoLogger.Printf("{%s} no subscription with id '%s'\n", r.URL, *env.SubscriptionID)
 					continue
 				} else {
-					// check if the event matches the desired filter, ignore otherwise
-					if !subscription.match(&env.Event) {
-						InfoLogger.Printf("{%s} filter does not match: %v ~ %v\n", r.URL, subscription.Filters, env.Event)
-						continue
-					}
-
-					// check signature, ignore invalid, except from trusted (AssumeValid) relays
-					if !r.AssumeValid {
-						if ok, _ := env.Event.CheckSignature(); !ok {
-							InfoLogger.Printf("{%s} bad signature on %s\n", r.URL, env.Event.ID)
+					for _, event := range env.Events {
+						// check if the event matches the desired filter, ignore otherwise
+						if !subscription.match(event) {
+							InfoLogger.Printf("{%s} filter does not match: %v ~ %v\n", r.URL, subscription.Filters, event)
 							continue
 						}
-					}
 
-					// dispatch this to the internal .events channel of the subscription
-					subscription.dispatchEvent(&env.Event)
+						// check signature, ignore invalid, except from trusted (AssumeValid) relays
+						if !r.AssumeValid {
+							if ok, _ := event.CheckSignature(); !ok {
+								InfoLogger.Printf("{%s} bad signature on %s\n", r.URL, event.ID)
+								continue
+							}
+						}
+
+						// dispatch this to the internal .events channel of the subscription
+						subscription.dispatchEvent(event)
+					}
 				}
 			case *EOSEEnvelope:
 				if subscription, ok := r.Subscriptions.Load(subIdToSerial(string(*env))); ok {
@@ -303,7 +306,78 @@ func (r *Relay) Write(msg []byte) <-chan error {
 
 // Publish sends an "EVENT" command to the relay r as in NIP-01 and waits for an OK response.
 func (r *Relay) Publish(ctx context.Context, event Event) error {
-	return r.publish(ctx, event.ID, &EventEnvelope{Event: event})
+	return r.publish(ctx, event.ID, &EventEnvelope{Events: []*Event{&event}})
+}
+
+// PublishMany sends n "EVENTS" command to the relay r and waits for an OK response for each.
+// This function is an extension. It is not part of the NIP-01 specification.
+func (r *Relay) PublishMany(ctx context.Context, events ...*Event) error {
+	var err error
+	var cancel context.CancelFunc
+
+	if len(events) == 0 {
+		// nothing to do
+		return nil
+	}
+
+	data, err := EventEnvelope{Events: events}.MarshalJSON()
+	if err != nil {
+		return fmt.Errorf("error marshaling events: %w", err)
+	}
+
+	if _, ok := ctx.Deadline(); !ok {
+		// if no timeout is set, force it to 7 seconds
+		ctx, cancel = context.WithTimeoutCause(ctx, 7*time.Second, fmt.Errorf("given up waiting for an OK"))
+		defer cancel()
+	}
+
+	done := make(chan struct{})
+	doneOnce := sync.Once{}
+
+	eventIDs := xsync.NewMapOf[string, *Event]()
+	for _, event := range events {
+		// listen for an OK callback for this event
+		eventIDs.Store(event.ID, event)
+
+		r.okCallbacks.Store(event.ID, func(ok bool, reason string) {
+			eventIDs.Compute(event.ID, func(_ *Event, loaded bool) (_ *Event, delete bool) {
+				if eventIDs.Size() == 1 {
+					// This is the last event, close the done channel.
+					doneOnce.Do(func() { close(done) })
+				}
+				// Nothing to do here, just delete the event from the map.
+				return nil, true
+			})
+
+			// Add the error to the main error if the OK is not true.
+			if !ok {
+				err = errors.Join(err, fmt.Errorf("%v: msg: %s", event.ID, reason))
+			}
+		})
+	}
+	defer func() {
+		eventIDs.Range(func(id string, _ *Event) bool {
+			r.okCallbacks.Delete(id)
+			return true
+		})
+	}()
+
+	if err := <-r.Write(data); err != nil {
+		return fmt.Errorf("cannot send %v event(s): %w", len(events), err)
+	}
+
+	select {
+	case <-done:
+		// all events have been processed
+		return err
+
+	case <-ctx.Done():
+		return errors.Join(err, ctx.Err())
+
+	case <-r.connectionContext.Done():
+		// this is caused when we lose connectivity
+		return err
+	}
 }
 
 // Auth sends an "AUTH" command client->relay as in NIP-42 and waits for an OK response.
