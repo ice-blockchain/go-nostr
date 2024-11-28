@@ -44,7 +44,7 @@ type Relay struct {
 
 	// custom things that aren't often used
 	//
-	AssumeValid bool // this will skip verifying signatures for events received from this relay
+	signatureChecker func(event *Event) bool // External signature checker. If nil, default is used.
 }
 
 type writeRequest struct {
@@ -91,7 +91,15 @@ type RelayOption interface {
 var (
 	_ RelayOption = (WithNoticeHandler)(nil)
 	_ RelayOption = (WithCustomHandler)(nil)
+	_ RelayOption = (WithSignatureChecker)(nil)
 )
+
+// WithSignatureChecker allows to pass a custom function that checks the signature of an event.
+type WithSignatureChecker func(*Event) bool
+
+func (sc WithSignatureChecker) ApplyRelayOption(r *Relay) {
+	r.signatureChecker = sc
+}
 
 // WithNoticeHandler just takes notices and is expected to do something with them.
 // when not given, defaults to logging the notices.
@@ -256,12 +264,16 @@ func (r *Relay) ConnectWithTLS(ctx context.Context, tlsConfig *tls.Config) error
 							continue
 						}
 
-						// check signature, ignore invalid, except from trusted (AssumeValid) relays
-						if !r.AssumeValid {
-							if ok, _ := event.CheckSignature(); !ok {
-								InfoLogger.Printf("{%s} bad signature on %s\n", r.URL, event.ID)
-								continue
-							}
+						var signatureOk bool
+						if r.signatureChecker != nil {
+							signatureOk = r.signatureChecker(event)
+						} else {
+							signatureOk, _ = event.CheckSignature()
+						}
+
+						if !signatureOk {
+							InfoLogger.Printf("{%s} bad signature on %s\n", r.URL, event.ID)
+							continue
 						}
 
 						// dispatch this to the internal .events channel of the subscription

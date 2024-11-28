@@ -195,10 +195,10 @@ func makeKeyPair(t *testing.T) (priv, pub string) {
 	return privkey, pubkey
 }
 
-func mustRelayConnect(t *testing.T, url string) *Relay {
+func mustRelayConnect(t *testing.T, url string, opts ...RelayOption) *Relay {
 	t.Helper()
 
-	rl, err := RelayConnect(context.Background(), url)
+	rl, err := RelayConnect(context.Background(), url, opts...)
 	require.NoError(t, err)
 
 	return rl
