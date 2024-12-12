@@ -522,8 +522,8 @@ func (r *Relay) PrepareSubscription(ctx context.Context, filters Filters, opts .
 	return sub
 }
 
-func (r *Relay) QueryEvents(ctx context.Context, filter Filter) (chan *Event, error) {
-	sub, err := r.Subscribe(ctx, Filters{filter})
+func (r *Relay) QueryEventsMany(ctx context.Context, filters ...Filter) (chan *Event, error) {
+	sub, err := r.Subscribe(ctx, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -544,7 +544,7 @@ func (r *Relay) QueryEvents(ctx context.Context, filter Filter) (chan *Event, er
 	return sub.Events, nil
 }
 
-func (r *Relay) QuerySync(ctx context.Context, filter Filter) ([]*Event, error) {
+func (r *Relay) BlockingQueryEventsMany(ctx context.Context, filters ...Filter) ([]*Event, error) {
 	if _, ok := ctx.Deadline(); !ok {
 		// if no timeout is set, force it to 7 seconds
 		var cancel context.CancelFunc
@@ -552,8 +552,8 @@ func (r *Relay) QuerySync(ctx context.Context, filter Filter) ([]*Event, error) 
 		defer cancel()
 	}
 
-	events := make([]*Event, 0, max(filter.Limit, 250))
-	ch, err := r.QueryEvents(ctx, filter)
+	events := make([]*Event, 0, calculateAllocSize(filters...))
+	ch, err := r.QueryEventsMany(ctx, filters...)
 	if err != nil {
 		return nil, err
 	}
@@ -563,6 +563,14 @@ func (r *Relay) QuerySync(ctx context.Context, filter Filter) ([]*Event, error) 
 	}
 
 	return events, nil
+}
+
+func (r *Relay) QueryEvents(ctx context.Context, filter Filter) (chan *Event, error) {
+	return r.QueryEventsMany(ctx, filter)
+}
+
+func (r *Relay) QuerySync(ctx context.Context, filter Filter) ([]*Event, error) {
+	return r.BlockingQueryEventsMany(ctx, filter)
 }
 
 func (r *Relay) Count(ctx context.Context, filters Filters, opts ...SubscriptionOption) (int64, error) {

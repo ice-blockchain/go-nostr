@@ -7,7 +7,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0
-	github.com/dgraph-io/ristretto/v2 v2.0.0
+	github.com/dgraph-io/ristretto/v2 v2.0.1
 	github.com/fiatjaf/eventstore v0.14.3
 	github.com/gobwas/httphead v0.1.0
 	github.com/gobwas/ws v1.4.0
@@ -23,8 +23,8 @@ require (
 	github.com/tursodatabase/go-libsql v0.0.0-20240916111504-922dfa87e1e6
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
-	golang.org/x/crypto v0.30.0
-	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
+	golang.org/x/crypto v0.31.0
+	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
 	golang.org/x/net v0.32.0
 	golang.org/x/text v0.21.0
 	modernc.org/sqlite v1.33.1
