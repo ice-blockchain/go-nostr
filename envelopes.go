@@ -2,7 +2,7 @@ package nostr
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -191,7 +191,8 @@ func (v ReqEnvelope) MarshalJSON() ([]byte, error) {
 type CountEnvelope struct {
 	SubscriptionID string
 	Filters
-	Count *int64
+	Count       *int64
+	HyperLogLog []byte
 }
 
 func (_ CountEnvelope) Label() string { return "COUNT" }
@@ -210,9 +211,16 @@ func (v *CountEnvelope) UnmarshalJSON(data []byte) error {
 
 	var countResult struct {
 		Count *int64 `json:"count"`
+		HLL   string `json:"hll"`
 	}
 	if err := json.Unmarshal([]byte(arr[2].Raw), &countResult); err == nil && countResult.Count != nil {
 		v.Count = countResult.Count
+		if len(countResult.HLL) == 512 {
+			v.HyperLogLog, err = hex.DecodeString(countResult.HLL)
+			if err != nil {
+				return fmt.Errorf("invalid \"hll\" value in COUNT message: %w", err)
+			}
+		}
 		return nil
 	}
 
@@ -238,6 +246,13 @@ func (v CountEnvelope) MarshalJSON() ([]byte, error) {
 	if v.Count != nil {
 		w.RawString(`,{"count":`)
 		w.RawString(strconv.FormatInt(*v.Count, 10))
+		if v.HyperLogLog != nil {
+			w.RawString(`,"hll":"`)
+			hllHex := make([]byte, 512)
+			hex.Encode(hllHex, v.HyperLogLog)
+			w.Buffer.AppendBytes(hllHex)
+			w.RawString(`"`)
+		}
 		w.RawString(`}`)
 	} else {
 		for _, filter := range v.Filters {
