@@ -76,3 +76,13 @@ func CompareEventPtrReverse(b, a *Event) int {
 	}
 	return cmp.Compare(a.CreatedAt, b.CreatedAt)
 }
+
+func calculateAllocSize(filters ...Filter) int {
+	var size = 250
+
+	if len(filters) > 0 {
+		size = max(size, filters[0].Limit)
+	}
+
+	return size
+}
