@@ -34,7 +34,7 @@ func parseURL(input string) (*url.URL, error) {
 
 // ValidateAuthEvent checks whether event is a valid NIP-42 event for given challenge and relayURL.
 // The result of the validation is encoded in the ok bool.
-func ValidateAuthEvent(event *nostr.Event, challenge string, relayURL string) (pubkey string, ok bool) {
+func ValidateAuthEvent(event *nostr.Event, challenge string, relayURL string, verifier func(*nostr.Event) (bool, error)) (pubkey string, ok bool) {
 	if event.Kind != nostr.KindClientAuthentication {
 		return "", false
 	}
@@ -66,7 +66,12 @@ func ValidateAuthEvent(event *nostr.Event, challenge string, relayURL string) (p
 
 	// save for last, as it is most expensive operation
 	// no need to check returned error, since ok == true implies err == nil.
-	if ok, _ := event.CheckSignature(); !ok {
+	if verifier == nil {
+		verifier = func(event *nostr.Event) (bool, error) {
+			return event.CheckSignature()
+		}
+	}
+	if ok, _ := verifier(event); !ok {
 		return "", false
 	}
 
