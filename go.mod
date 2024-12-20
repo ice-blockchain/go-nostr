@@ -14,7 +14,7 @@ require (
 	github.com/graph-gophers/dataloader/v7 v7.1.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
-	github.com/mailru/easyjson v0.7.7
+	github.com/mailru/easyjson v0.9.0
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/ncruces/go-sqlite3 v0.20.3
 	github.com/puzpuzpuz/xsync/v3 v3.4.0
@@ -24,7 +24,7 @@ require (
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.31.0
-	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	golang.org/x/net v0.32.0
 	golang.org/x/text v0.21.0
 	modernc.org/sqlite v1.33.1
