@@ -1,6 +1,7 @@
 package nostr
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/mailru/easyjson"
@@ -111,6 +112,30 @@ func (ef Filter) Matches(event *Event) bool {
 	return true
 }
 
+func (ef Filter) matchesTagSet(tag Tag, values TagValues) bool {
+	for i, value := range values {
+		if value == nil {
+			continue
+		}
+		if i >= len(tag) || tag[i] != *value {
+			return false
+		}
+	}
+	return true
+}
+
+// MatchesIgnoringTimestampConstraints checks if an event matches this filter's criteria, excluding any timestamp-based filters.
+// The function performs exact matching on IDs, Kinds, Authors and Tags.
+// For tags, it uses a two-dimensional matching approach where:
+// - The outer dimension (different tag value sets) are matched using OR logic
+// - The inner dimension (values within a tag value set) are matched using AND logic
+// - nil values are ignored (i.e. they match any value)
+// For example, with filter tags ["t", [["chess"], ["gaming", "sports"]]]:
+// - Event matches if it has tag "t" AND:
+//   - (has value "chess") OR
+//   - (has both values "gaming" AND "sports")
+//
+// Returns false if the event is nil or doesn't match any criteria.
 func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 	if event == nil {
 		return false
@@ -128,32 +153,22 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 		return false
 	}
 
-	valuesOf := func(name string) Tag {
-		for _, tag := range event.Tags {
-			if tag.Key() == name {
-				return tag[1:] // Skip the tag name.
-			}
+	wantTags := maps.Clone(ef.Tags)
+	for _, tag := range event.Tags {
+		sets, ok := wantTags[tag.Key()]
+		if !ok {
+			continue
 		}
-		return nil
-	}
-
-	for tag, values := range ef.Tags {
-		eventTagValues := valuesOf(tag)
-		if eventTagValues == nil {
+		hasSetMatch := len(sets) == 0
+		for _, filterValues := range sets {
+			hasSetMatch = hasSetMatch || ef.matchesTagSet(tag[1:], filterValues)
+		}
+		if !hasSetMatch {
 			return false
 		}
-		for i := range values {
-			for j := range values[i] {
-				if values[i][j] == nil {
-					continue
-				}
-				if j >= len(eventTagValues) || *values[i][j] != eventTagValues[j] {
-					return false
-				}
-			}
-		}
+		delete(wantTags, tag.Key())
 	}
-	return true
+	return len(wantTags) == 0
 }
 
 func FilterEqual(a Filter, b Filter) bool {
