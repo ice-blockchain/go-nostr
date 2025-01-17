@@ -218,6 +218,7 @@ func TestFilterMatches(t *testing.T) {
 			Event: Event{
 				Tags: Tags{{"e", "0", "2", "3"}},
 			},
+			Match: true,
 		},
 		{
 			Filter: Filter{
@@ -235,10 +236,36 @@ func TestFilterMatches(t *testing.T) {
 			},
 			Event: Event{},
 		},
+		{
+			Filter: Filter{
+				Tags: TagMap{}.
+					Append("k", ptr("1")).
+					Append("k", ptr("2")),
+			},
+			Event: Event{
+				Tags: Tags{
+					{"k", "1"},
+				},
+			},
+			Match: true,
+		},
+		{
+			Filter: Filter{
+				Tags: TagMap{}.
+					Append("k", ptr("1"), ptr("2")),
+			},
+			Event: Event{
+				Tags: Tags{
+					{"k", "1"},
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
-		r := c.Filter.Matches(&c.Event)
-		require.Equalf(t, c.Match, r, "filter: %+v, event: %+v", c.Filter, c.Event)
+		t.Run(c.Filter.String(), func(t *testing.T) {
+			r := c.Filter.Matches(&c.Event)
+			require.Equalf(t, c.Match, r, "event: %+v", c.Event)
+		})
 	}
 }
