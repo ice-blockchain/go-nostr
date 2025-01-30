@@ -269,3 +269,16 @@ func TestFilterMatches(t *testing.T) {
 		})
 	}
 }
+func TestTagMapAll(t *testing.T) {
+	t.Parallel()
+
+	tagMap := TagMap{}.
+		SetLiterals("fruit", "apple", "banana").
+		Append("fruit", ptr("orange")).
+		SetLiterals("color", "red", "yellow").
+		Append("color", nil, ptr("blue"))
+
+	require.ElementsMatch(t, []string{"apple", "banana", "orange"}, tagMap.All("fruit"))
+	require.ElementsMatch(t, []string{"red", "yellow", "blue"}, tagMap.All("color"))
+	require.Empty(t, tagMap.All("nonexistent"))
+}

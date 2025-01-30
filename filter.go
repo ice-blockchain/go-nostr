@@ -59,6 +59,24 @@ func (m TagMap) HasValues(tag string) bool {
 	return false
 }
 
+// All returns all non-empty values for the given tag as a single slice.
+func (m TagMap) All(tag string) (values []string) {
+	for _, tagValues := range m[tag] {
+		values = append(values, tagValues.All()...)
+	}
+	return values
+}
+
+// All returns all non-empty values.
+func (v TagValues) All() (values []string) {
+	for _, value := range v {
+		if value != nil {
+			values = append(values, *value)
+		}
+	}
+	return values
+}
+
 func (v TagValues) Empty() bool {
 	for i := range v {
 		if v[i] != nil {
