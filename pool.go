@@ -146,7 +146,7 @@ func (pool *SimplePool) EnsureRelay(url string) (*Relay, error) {
 		if pool.penaltyBox != nil {
 			pool.penaltyBoxMu.Lock()
 			defer pool.penaltyBoxMu.Unlock()
-			v, _ := pool.penaltyBox[nm]
+			v := pool.penaltyBox[nm]
 			if v[1] > 0 {
 				return nil, fmt.Errorf("in penalty box, %fs remaining", v[1])
 			}
@@ -169,7 +169,7 @@ func (pool *SimplePool) EnsureRelay(url string) (*Relay, error) {
 			// putting relay in penalty box
 			pool.penaltyBoxMu.Lock()
 			defer pool.penaltyBoxMu.Unlock()
-			v, _ := pool.penaltyBox[nm]
+			v := pool.penaltyBox[nm]
 			pool.penaltyBox[nm] = [2]float64{v[0] + 1, 30.0 + math.Pow(2, v[0]+1)}
 		}
 		return nil, fmt.Errorf("failed to connect: %w", err)

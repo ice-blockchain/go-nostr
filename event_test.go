@@ -71,13 +71,6 @@ func TestEventSerialization(t *testing.T) {
 	}
 }
 
-func mustSignEvent(t *testing.T, privkey string, event *Event) {
-	t.Helper()
-	if err := event.Sign(privkey); err != nil {
-		t.Fatalf("event.Sign: %v", err)
-	}
-}
-
 func TestIDCheck(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		evt := Event{
@@ -96,7 +89,7 @@ func TestIDCheck(t *testing.T) {
 func BenchmarkIDCheck(b *testing.B) {
 	evt := Event{
 		CreatedAt: Timestamp(rand.Int64N(9999999)),
-		Content:   fmt.Sprintf("hello"),
+		Content:   "hello",
 		Tags:      Tags{},
 	}
 	evt.Sign(GeneratePrivateKey())

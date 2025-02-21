@@ -66,7 +66,7 @@ func WithDoNotCheckFilters() SubscriptionOption {
 // WithLabel puts a label on the subscription (it is prepended to the automatic id) that is sent to relays.
 type WithLabel string
 
-func (_ WithLabel) IsSubscriptionOption() {}
+func (WithLabel) IsSubscriptionOption() {}
 
 var (
 	_ SubscriptionOption = (WithLabel)("")
