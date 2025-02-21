@@ -31,7 +31,7 @@ type Subscription struct {
 	// Context will be .Done() when the subscription ends
 	Context context.Context
 
-	match  func(*Event) bool // this will be either Filters.Match or Filters.MatchIgnoringTimestampConstraints
+	match  func(*Event) bool // this will be either Filters.Match or Filters.MatchIgnoringTimestampConstraints or dummyMatch.
 	live   atomic.Bool
 	eosed  atomic.Bool
 	cancel context.CancelFunc
@@ -53,12 +53,25 @@ type SubscriptionOption interface {
 	IsSubscriptionOption()
 }
 
+type doNotCheckFilters struct{}
+
+func (doNotCheckFilters) IsSubscriptionOption() {}
+
+// WithDoNotCheckFilters is a SubscriptionOption that tells the library not to check the incoming events against
+// the filters. This is useful when you want to receive all events from a relay, regardless of the initial filters.
+func WithDoNotCheckFilters() SubscriptionOption {
+	return doNotCheckFilters{}
+}
+
 // WithLabel puts a label on the subscription (it is prepended to the automatic id) that is sent to relays.
 type WithLabel string
 
 func (_ WithLabel) IsSubscriptionOption() {}
 
-var _ SubscriptionOption = (WithLabel)("")
+var (
+	_ SubscriptionOption = (WithLabel)("")
+	_ SubscriptionOption = doNotCheckFilters{}
+)
 
 func (sub *Subscription) start() {
 	<-sub.Context.Done()

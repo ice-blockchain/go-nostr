@@ -502,6 +502,8 @@ func (r *Relay) PrepareSubscription(ctx context.Context, filters Filters, opts .
 		switch o := opt.(type) {
 		case WithLabel:
 			label = string(o)
+		case doNotCheckFilters:
+			sub.match = func(*Event) bool { return true }
 		}
 	}
 

@@ -1,7 +1,6 @@
 package nostr
 
 import (
-	"context"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -20,7 +19,7 @@ func TestSubscribeBasic(t *testing.T) {
 	rl := mustRelayConnect(t, RELAY)
 	defer rl.Close()
 
-	sub, err := rl.Subscribe(context.Background(), Filters{{Kinds: []int{KindTextNote}, Limit: 2}})
+	sub, err := rl.Subscribe(t.Context(), Filters{{Kinds: []int{KindTextNote}, Limit: 2}})
 	require.NoError(t, err)
 
 	timeout := time.After(5 * time.Second)
@@ -58,7 +57,7 @@ func TestNestedSubscriptions(t *testing.T) {
 	n := atomic.Uint32{}
 
 	// fetch 2 replies to a note
-	sub, err := rl.Subscribe(context.Background(),
+	sub, err := rl.Subscribe(t.Context(),
 		Filters{
 			{
 				Kinds: []int{KindTextNote},
@@ -71,14 +70,14 @@ func TestNestedSubscriptions(t *testing.T) {
 		select {
 		case event := <-sub.Events:
 			// now fetch author of this
-			sub, err := rl.Subscribe(context.Background(), Filters{{Kinds: []int{KindProfileMetadata}, Authors: []string{event.PubKey}, Limit: 1}})
+			sub, err := rl.Subscribe(t.Context(), Filters{{Kinds: []int{KindProfileMetadata}, Authors: []string{event.PubKey}, Limit: 1}})
 			require.NoError(t, err)
 
 			for {
 				select {
 				case <-sub.Events:
 					// do another subscription here in "sync" mode, just so we're sure things are not blocking
-					rl.QuerySync(context.Background(), Filter{Limit: 1})
+					rl.QuerySync(t.Context(), Filter{Limit: 1})
 
 					n.Add(1)
 					if n.Load() == 3 {
@@ -139,7 +138,7 @@ func TestSubscribeWithExternalSignature(t *testing.T) {
 		return true
 	}))
 
-	sub, err := rl.Subscribe(context.Background(), Filters{{Kinds: []int{KindTextNote}, Limit: 1}})
+	sub, err := rl.Subscribe(t.Context(), Filters{{Kinds: []int{KindTextNote}, Limit: 1}})
 	require.NoError(t, err)
 
 	select {
@@ -150,6 +149,54 @@ func TestSubscribeWithExternalSignature(t *testing.T) {
 		require.Error(t, err)
 		require.False(t, ok)
 		require.True(t, didCheck.Load())
+		close(ch)
+
+	case <-sub.EndOfStoredEvents:
+		sub.Unsub()
+
+	case <-sub.Context.Done():
+		t.Fatalf("connection closed: %v", rl.Context().Err())
+	}
+}
+
+func TestSubscribeWithDoNotCheckFilters(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan struct{})
+	ws := newWebsocketServer(func(conn *websocket.Conn) {
+		var req ReqEnvelope
+
+		err := websocket.JSON.Receive(conn, &req)
+		require.NoError(t, err)
+
+		t.Logf("received subscription request: %v", req)
+
+		var e = EventEnvelope{
+			SubscriptionID: &req.SubscriptionID,
+			Events: []*Event{
+				{
+					Kind:    KindTextNote,
+					Content: "hello",
+				},
+			},
+		}
+
+		err = websocket.JSON.Send(conn, &e)
+		require.NoError(t, err)
+
+		<-ch
+	})
+	defer ws.Close()
+
+	rl := mustRelayConnect(t, ws.URL, WithSignatureChecker(func(*Event) bool { return true }))
+	sub, err := rl.Subscribe(t.Context(), Filters{{Kinds: []int{KindArticle}, Limit: 1}}, WithDoNotCheckFilters())
+	require.NoError(t, err)
+
+	select {
+	case event := <-sub.Events:
+		require.NotNil(t, event)
+		require.Equal(t, KindTextNote, event.Kind)
+		require.False(t, sub.Filters.Match(event))
 		close(ch)
 
 	case <-sub.EndOfStoredEvents:
