@@ -23,9 +23,9 @@ require (
 	github.com/tursodatabase/go-libsql v0.0.0-20240916111504-922dfa87e1e6
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.36.0
 	golang.org/x/text v0.22.0
 	modernc.org/sqlite v1.33.1
 )
