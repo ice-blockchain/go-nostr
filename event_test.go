@@ -124,3 +124,82 @@ func TestSerializeEmptyContent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, ev, ev2)
 }
+func TestCheckID(t *testing.T) {
+	t.Parallel()
+
+	t.Run("valid ID", func(t *testing.T) {
+		evt := Event{
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Timestamp(1644271588),
+			Kind:      1,
+			Tags:      Tags{},
+			Content:   "test content",
+		}
+		// Generate proper ID
+		evt.ID = evt.GetID()
+		require.True(t, evt.CheckID())
+	})
+
+	t.Run("invalid ID length", func(t *testing.T) {
+		evt := Event{
+			ID:        "too_short",
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Timestamp(1644271588),
+			Kind:      1,
+			Tags:      Tags{},
+			Content:   "test content",
+		}
+		require.False(t, evt.CheckID())
+
+		evt.ID = "this_id_is_way_too_long_to_be_a_valid_id_it_should_be_exactly_64_hexadecimal_characters_and_nothing_else"
+		require.False(t, evt.CheckID())
+	})
+
+	t.Run("tampered content", func(t *testing.T) {
+		evt := Event{
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Timestamp(1644271588),
+			Kind:      1,
+			Tags:      Tags{},
+			Content:   "original content",
+		}
+		evt.ID = evt.GetID()
+		require.True(t, evt.CheckID())
+
+		// Modify content after ID was calculated
+		evt.Content = "modified content"
+		require.False(t, evt.CheckID())
+	})
+
+	t.Run("tampered pubkey", func(t *testing.T) {
+		evt := Event{
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Timestamp(1644271588),
+			Kind:      1,
+			Tags:      Tags{},
+			Content:   "test content",
+		}
+		evt.ID = evt.GetID()
+		require.True(t, evt.CheckID())
+
+		// Modify pubkey after ID was calculated
+		evt.PubKey = "e9142f724955c5854de36324dab0434f97b15ec6b33464d56ebe491e3f559d1b"
+		require.False(t, evt.CheckID())
+	})
+
+	t.Run("tampered tags", func(t *testing.T) {
+		evt := Event{
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Timestamp(1644271588),
+			Kind:      1,
+			Tags:      Tags{},
+			Content:   "test content",
+		}
+		evt.ID = evt.GetID()
+		require.True(t, evt.CheckID())
+
+		// Modify tags after ID was calculated
+		evt.Tags = Tags{Tag{"p", "someone"}}
+		require.False(t, evt.CheckID())
+	})
+}
