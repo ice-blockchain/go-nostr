@@ -141,9 +141,11 @@ func easyjsonF642ad3eEncodeGithubComNbdWtfGoNostr(out *jwriter.Writer, in Event)
 		out.RawByte(']')
 	}
 	{
-		const prefix string = ",\"content\":"
-		out.RawString(prefix)
-		out.String(in.Content)
+		if in.Content != "" {
+			const prefix string = ",\"content\":"
+			out.RawString(prefix)
+			out.String(in.Content)
+		}
 	}
 	{
 		if in.Sig != "" {

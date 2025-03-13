@@ -106,3 +106,21 @@ func BenchmarkIDCheck(b *testing.B) {
 		}
 	})
 }
+
+func TestSerializeEmptyContent(t *testing.T) {
+	t.Parallel()
+
+	var ev Event
+	ev.ID = "1"
+	ev.Kind = 2
+	ev.Tags = Tags{}
+
+	data, err := ev.MarshalJSON()
+	require.NoError(t, err)
+	require.NotContains(t, string(data), "content")
+
+	var ev2 Event
+	err = ev2.UnmarshalJSON(data)
+	require.NoError(t, err)
+	require.Equal(t, ev, ev2)
+}
