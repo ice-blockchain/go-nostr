@@ -8,7 +8,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0
 	github.com/dgraph-io/ristretto/v2 v2.1.0
-	github.com/fiatjaf/eventstore v0.16.2
+	github.com/fiatjaf/eventstore v0.16.4
 	github.com/gobwas/httphead v0.1.0
 	github.com/gobwas/ws v1.4.0
 	github.com/graph-gophers/dataloader/v7 v7.1.0
