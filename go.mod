@@ -25,7 +25,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.36.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
-	golang.org/x/net v0.35.0
+	golang.org/x/net v0.38.0
 	golang.org/x/text v0.23.0
 	modernc.org/sqlite v1.33.1
 )
