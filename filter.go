@@ -13,14 +13,15 @@ type (
 	TagMap map[string][]TagValues
 
 	Filter struct {
-		IDs     []string
-		Kinds   []int
-		Authors []string
-		Tags    TagMap
-		Since   *Timestamp
-		Until   *Timestamp
-		Limit   int
-		Search  string
+		IDs       []string
+		Kinds     []int
+		Authors   []string
+		Addresses []string
+		Tags      TagMap
+		Since     *Timestamp
+		Until     *Timestamp
+		Limit     int
+		Search    string
 
 		// LimitZero is or must be set when there is a "limit":0 in the filter, and not when "limit" is just omitted
 		LimitZero bool `json:"-"`
@@ -171,6 +172,10 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 		return false
 	}
 
+	if ef.Addresses != nil && !slices.Contains(ef.Addresses, event.Address()) {
+		return false
+	}
+
 	wantTags := maps.Clone(ef.Tags)
 	for _, tag := range event.Tags {
 		sets, ok := wantTags[tag.Key()]
@@ -199,6 +204,10 @@ func FilterEqual(a Filter, b Filter) bool {
 	}
 
 	if !similar(a.Authors, b.Authors) {
+		return false
+	}
+
+	if !similar(a.Addresses, b.Addresses) {
 		return false
 	}
 
@@ -252,6 +261,7 @@ func (ef Filter) Clone() Filter {
 		IDs:       slices.Clone(ef.IDs),
 		Authors:   slices.Clone(ef.Authors),
 		Kinds:     slices.Clone(ef.Kinds),
+		Addresses: slices.Clone(ef.Addresses),
 		Limit:     ef.Limit,
 		Search:    ef.Search,
 		LimitZero: ef.LimitZero,

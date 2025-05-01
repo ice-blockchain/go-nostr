@@ -101,6 +101,28 @@ func easyjson4d398eaaDecodeGithubComNbdWtfGoNostr(in *jlexer.Lexer, out *Filter)
 				}
 				in.Delim(']')
 			}
+		case "addresses":
+			if in.IsNull() {
+				in.Skip()
+				out.Addresses = nil
+			} else {
+				in.Delim('[')
+				if out.Addresses == nil {
+					if !in.IsDelim(']') {
+						out.Addresses = make([]string, 0, 40)
+					} else {
+						out.Addresses = []string{}
+					}
+				} else {
+					out.Addresses = (out.Addresses)[:0]
+				}
+				for !in.IsDelim(']') {
+					v3 := string(in.String())
+					out.Addresses = append(out.Addresses, v3)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
 		case "since":
 			if in.IsNull() {
 				in.Skip()
@@ -240,6 +262,25 @@ func easyjson4d398eaaEncodeGithubComNbdWtfGoNostr(out *jwriter.Writer, in Filter
 		{
 			out.RawByte('[')
 			for v8, v9 := range in.Authors {
+				if v8 > 0 {
+					out.RawByte(',')
+				}
+				out.String(string(v9))
+			}
+			out.RawByte(']')
+		}
+	}
+	if len(in.Addresses) != 0 {
+		const prefix string = ",\"addresses\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('[')
+			for v8, v9 := range in.Addresses {
 				if v8 > 0 {
 					out.RawByte(',')
 				}

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"github.com/mailru/easyjson"
 )
@@ -82,4 +83,16 @@ func (evt *Event) Serialize() []byte {
 	dst = append(dst, ']')
 
 	return dst
+}
+
+func (evt *Event) Address() string {
+	switch {
+	case IsAddressableKind(evt.Kind):
+		return strconv.Itoa(evt.Kind) + ":" + evt.PubKey + ":" + evt.Tags.GetD()
+
+	case IsReplaceableKind(evt.Kind):
+		return strconv.Itoa(evt.Kind) + ":" + evt.PubKey + ":"
+	}
+
+	return evt.ID
 }
