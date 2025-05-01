@@ -81,6 +81,25 @@ func TestFilterMarshalWithLimitZero(t *testing.T) {
 	require.Equal(t, expected, string(filterj))
 }
 
+func TestFilterMarshalUnmarshalWithAddresses(t *testing.T) {
+	t.Parallel()
+
+	filterj, err := json.Marshal(Filter{
+		Kinds:     []int{KindTextNote, KindRecommendServer, KindEncryptedDirectMessage},
+		Addresses: []string{"0:key:", "1:key:tag"},
+	})
+	require.NoError(t, err)
+
+	expected := `{"kinds":[1,2,4],"addresses":["0:key:","1:key:tag"]}`
+	require.Equal(t, expected, string(filterj))
+
+	var filter Filter
+	err = json.Unmarshal([]byte(expected), &filter)
+	require.NoError(t, err)
+	require.Equal(t, []int{KindTextNote, KindRecommendServer, KindEncryptedDirectMessage}, filter.Kinds)
+	require.Equal(t, []string{"0:key:", "1:key:tag"}, filter.Addresses)
+}
+
 func TestFilterMatchingLive(t *testing.T) {
 	t.Parallel()
 
@@ -100,6 +119,16 @@ func TestFilterEquality(t *testing.T) {
 		Filter{Kinds: []int{KindEncryptedDirectMessage, KindDeletion}},
 		Filter{Kinds: []int{KindEncryptedDirectMessage, KindDeletion}},
 	), "kinds filters should be equal")
+
+	require.True(t, FilterEqual(
+		Filter{Addresses: []string{"1", "foo"}},
+		Filter{Addresses: []string{"1", "foo"}},
+	), "addresses filters should be equal")
+
+	require.False(t, FilterEqual(
+		Filter{Addresses: []string{"1", "foo"}},
+		Filter{Addresses: []string{"foo"}},
+	), "addresses filters should not be equal")
 
 	require.True(t, FilterEqual(
 		Filter{Kinds: []int{KindEncryptedDirectMessage, KindDeletion}, Tags: TagMap{}.SetLiterals("letter", "a", "b")},
@@ -281,4 +310,76 @@ func TestTagMapAll(t *testing.T) {
 	require.ElementsMatch(t, []string{"apple", "banana", "orange"}, tagMap.All("fruit"))
 	require.ElementsMatch(t, []string{"red", "yellow", "blue"}, tagMap.All("color"))
 	require.Empty(t, tagMap.All("nonexistent"))
+}
+
+func TestFilterAddressMatch(t *testing.T) {
+	t.Parallel()
+
+	var cases = []struct {
+		Filter Filter
+		Event  Event
+		Match  bool
+	}{
+		{
+			Filter: Filter{
+				Addresses: []string{"0:key:"},
+			},
+			Event: Event{
+				Kind:   0,
+				PubKey: "key",
+			},
+			Match: true,
+		},
+		{
+			Filter: Filter{
+				Addresses: []string{"0:key:x"},
+			},
+			Event: Event{
+				Kind:   0,
+				PubKey: "key",
+			},
+		},
+		{
+			Filter: Filter{
+				Addresses: []string{"idtest"},
+			},
+			Event: Event{
+				Kind: 1,
+				ID:   "idtest",
+			},
+			Match: true,
+		},
+		{
+			Filter: Filter{
+				Addresses: []string{"30001:key:tag"},
+			},
+			Event: Event{
+				Kind:   30001,
+				PubKey: "key",
+				Tags: Tags{
+					{"d", "tag"},
+				},
+			},
+			Match: true,
+		},
+		{
+			Filter: Filter{
+				Addresses: []string{"30001:key:tag"},
+			},
+			Event: Event{
+				Kind:   30001,
+				PubKey: "key",
+				Tags: Tags{
+					{"d", "foo"},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.Filter.String(), func(t *testing.T) {
+			r := c.Filter.Matches(&c.Event)
+			require.Equalf(t, c.Match, r, "event: %+v", c.Event)
+		})
+	}
 }

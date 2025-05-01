@@ -186,3 +186,51 @@ func TestCheckID(t *testing.T) {
 		require.False(t, evt.CheckID())
 	})
 }
+func TestEventAddress(t *testing.T) {
+	t.Parallel()
+
+	t.Run("addressable kind", func(t *testing.T) {
+		// Create an event with an addressable kind (like a parameterized replaceable event, 30000-39999).
+		evt := Event{
+			ID:        "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Now(),
+			Kind:      30001, // Parameterized replaceable event
+			Tags:      Tags{Tag{"d", "test-d-value"}},
+			Content:   "test content",
+		}
+
+		expected := "30001:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:test-d-value"
+		require.Equal(t, expected, evt.Address())
+	})
+
+	t.Run("replaceable kind", func(t *testing.T) {
+		// Create an event with a replaceable kind (like metadata, 0).
+		evt := Event{
+			ID:        "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Now(),
+			Kind:      KindProfileMetadata, // Metadata event (replaceable).
+			Tags:      Tags{},
+			Content:   "test content",
+		}
+
+		expected := "0:3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d:"
+		require.Equal(t, expected, evt.Address())
+	})
+
+	t.Run("default case", func(t *testing.T) {
+		// Create an event with a kind that's neither addressable nor replaceable (like a text note, 1).
+		evt := Event{
+			ID:        "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+			PubKey:    "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d",
+			CreatedAt: Now(),
+			Kind:      KindTextNote, // Text note (not replaceable or addressable).
+			Tags:      Tags{},
+			Content:   "test content",
+		}
+
+		// For non-addressable, non-replaceable events, the address should be the event ID.
+		require.Equal(t, evt.ID, evt.Address())
+	})
+}
