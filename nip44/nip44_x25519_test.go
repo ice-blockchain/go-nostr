@@ -10,6 +10,7 @@ import (
 )
 
 func TestConversationKeyWithExpectedValues(t *testing.T) {
+	t.Parallel()
 	privKey := "183776f71c9963dc4b767cbb5c0ee28ee91eaca8f9919bc8405295c82f0da61f"
 	pubKey := "bf0a14973a578103fb9dcca5225a3545a9893f86dd33d568585d5886db149844"
 
@@ -28,6 +29,7 @@ func TestConversationKeyWithExpectedValues(t *testing.T) {
 }
 
 func TestConversationKeyInvalid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		privKey string
@@ -77,6 +79,7 @@ func TestConversationKeyInvalid(t *testing.T) {
 }
 
 func TestX25519KeySymmetry(t *testing.T) {
+	t.Parallel()
 	alicePrivKey := "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a"
 	alicePubKey := "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"
 
@@ -103,6 +106,7 @@ func TestX25519KeySymmetry(t *testing.T) {
 }
 
 func TestKeyConversionAndSymmetry(t *testing.T) {
+	t.Parallel()
 	aliceEd25519PrivKey, aliceEd25519PubKey := HelperGenerateKeyPair(t)
 	bobEd25519PrivKey, bobEd25519PubKey := HelperGenerateKeyPair(t)
 
@@ -150,29 +154,30 @@ func TestKeyConversionAndSymmetry(t *testing.T) {
 }
 
 func TestKnownKeyConversionAndSymmetry(t *testing.T) {
+	t.Parallel()
 	senderEd25519PubKey := "9e58d6f86dce97b32a86dc7544f21471a4c25506ec9f0c340184b3b6e11980a5"
 	receiverEd25519PrivKey := "9a63bfdc132c6f2b1e43f873db02960193bd0ae90eb724a724400b1325905b2c"
 	receiverEd25519PubKey := "5cfa36d53eac86221028150a88a3e398d5983b005dcf7b45e447e9d24f80e46c"
 
 	senderX25519PubKey, err := ConvertEd25519PublicKeyToX25519(senderEd25519PubKey)
-	require.NoError(t, err, "Error converting Alice's public key: %v", err)
+	require.NoError(t, err, "Error converting sender's public key: %v", err)
 
 	receiverX25519PrivKey, err := ConvertEd25519PrivateKeyToX25519(receiverEd25519PrivKey)
-	require.NoError(t, err, "Error converting Bob's private key: %v", err)
+	require.NoError(t, err, "Error converting receiver's private key: %v", err)
 
 	receiverX25519PubKey, err := ConvertEd25519PublicKeyToX25519(receiverEd25519PubKey)
-	require.NoError(t, err, "Error converting Bob's public key: %v", err)
+	require.NoError(t, err, "Error converting receiver's public key: %v", err)
 
-	t.Logf("Alice X25519 Public:  %s", senderX25519PubKey)
-	t.Logf("Bob X25519 Private:   %s", receiverX25519PrivKey)
-	t.Logf("Bob X25519 Public:    %s", receiverX25519PubKey)
+	t.Logf("Sender X25519 Public:  %s", senderX25519PubKey)
+	t.Logf("Receiver X25519 Private:   %s", receiverX25519PrivKey)
+	t.Logf("Receiver X25519 Public:    %s", receiverX25519PubKey)
 
 	receiverToSenderKey, err := GenerateConversationKeyX25519(receiverX25519PrivKey, senderX25519PubKey)
-	require.NoError(t, err, "Error generating conversation key from Bob to Alice: %v", err)
+	require.NoError(t, err, "Error generating conversation key from receiver to sender: %v", err)
 
 	require.Equal(t, "03c7306a1299747e29f263c915cc1fe58637bf36adfd537a064cb5252b891ee6", hex.EncodeToString(receiverToSenderKey[:]))
 
-	t.Logf("Conversation key from Bob to Alice: %x", receiverToSenderKey)
+	t.Logf("Conversation key from receiver to sender: %x", receiverToSenderKey)
 
 	expected := "AhSA7WBdWIvj1SWrn57OP6CU/DRRpH+SycP5tA6RpJKI45hJY5axUzifRyyylD+nJvdz97WqXqiZncgdHOiyiM1Ze+r7tDP+hnl3r8H0QDuzqALGL11qpbrCcTRlcIH4959t"
 	decrypted, err := DecryptX25519(expected, receiverToSenderKey)

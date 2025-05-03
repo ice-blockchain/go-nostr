@@ -17,6 +17,7 @@ func HelperGenerateKeyPair(t *testing.T) (private string, public string) {
 }
 
 func TestGenerateKeys(t *testing.T) {
+	t.Parallel()
 	privKey, pubKey := HelperGenerateKeyPair(t)
 	t.Logf("ED25519 private key: %s", privKey)
 	t.Logf("ED25519 public key: %s", pubKey)
@@ -39,6 +40,7 @@ func TestGenerateKeys(t *testing.T) {
 }
 
 func TestConvertEd25519PrivateKeyToX25519(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		ed25519PrivHex string
@@ -80,6 +82,7 @@ func TestConvertEd25519PrivateKeyToX25519(t *testing.T) {
 }
 
 func TestConvertEd25519PublicKeyToX25519(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		ed25519PubHex  string
