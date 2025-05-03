@@ -31,7 +31,7 @@ const (
 	DecryptedMaxLength  = 87472
 )
 
-func EncryptX25519(plaintext string, conversationKey [32]byte, customNonce []byte) (string, error) {
+func EncryptX25519(plaintext string, conversationKey [ConversationKeySize]byte, customNonce []byte) (string, error) {
 	var nonce [NonceSize]byte
 	if customNonce != nil {
 		if len(customNonce) != NonceSize {
