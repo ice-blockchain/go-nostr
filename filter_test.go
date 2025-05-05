@@ -289,6 +289,36 @@ func TestFilterMatches(t *testing.T) {
 				},
 			},
 		},
+		{
+			Filter: Filter{
+				Kinds: []int{KindFollowList},
+				Tags: TagMap{}.
+					SetLiterals("p", "key1"),
+			},
+			Event: Event{
+				Kind: KindFollowList,
+				Tags: Tags{
+					{"p", "key0"},
+					{"p", "key1"},
+				},
+			},
+			Match: true,
+		},
+		{
+			Filter: Filter{
+				Kinds: []int{KindFollowList},
+				Tags: TagMap{}.
+					SetLiterals("p", "key1"),
+			},
+			Event: Event{
+				Kind: KindFollowList,
+				Tags: Tags{
+					{"p", "key1"},
+					{"p", "key2"},
+				},
+			},
+			Match: true,
+		},
 	}
 
 	for _, c := range cases {

@@ -187,7 +187,7 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 			hasSetMatch = hasSetMatch || ef.matchesTagSet(tag[1:], filterValues)
 		}
 		if !hasSetMatch {
-			return false
+			continue
 		}
 		delete(wantTags, tag.Key())
 	}
