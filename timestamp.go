@@ -24,9 +24,9 @@ func (t Timestamp) Time() time.Time {
 	case t < 1e10: // Seconds.
 		return time.Unix(int64(t), 0)
 	case t < 1e13: // Milliseconds.
-		return time.Unix(int64(t)/1000, (int64(t)%1000)*1e6)
+		return time.UnixMilli(int64(t))
 	case t < 1e16: // Microseconds.
-		return time.Unix(int64(t)/1e6, (int64(t)%1e6)*1e3)
+		return time.UnixMicro(int64(t))
 	default: // Nanoseconds.
 		return time.Unix(int64(t)/1e9, int64(t)%1e9)
 	}
