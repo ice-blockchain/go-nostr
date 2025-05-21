@@ -44,6 +44,10 @@ func (tag Tag) Key() string {
 	return ""
 }
 
+func (tag Tag) Empty() bool {
+	return len(tag) == 0
+}
+
 func (tag Tag) Value() string {
 	if len(tag) > 1 {
 		return tag[1]
