@@ -68,3 +68,123 @@ func TestTimestamp_Scan(t *testing.T) {
 		})
 	}
 }
+func TestTimestamp_Add(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		ts       Timestamp
+		duration time.Duration
+		want     Timestamp
+	}{
+		// Seconds scale
+		{
+			name:     "add to seconds scale (positive)",
+			ts:       Timestamp(1234567890), // seconds
+			duration: 60 * time.Second,
+			want:     Timestamp(1234567950),
+		},
+		{
+			name:     "add to seconds scale (negative)",
+			ts:       Timestamp(1234567890), // seconds
+			duration: -60 * time.Second,
+			want:     Timestamp(1234567830),
+		},
+
+		// Milliseconds scale
+		{
+			name:     "add to milliseconds scale (positive)",
+			ts:       Timestamp(1234567890123), // milliseconds
+			duration: 60 * time.Second,
+			want:     Timestamp(1234567950123),
+		},
+		{
+			name:     "add to milliseconds scale (negative)",
+			ts:       Timestamp(1234567890123), // milliseconds
+			duration: -60 * time.Second,
+			want:     Timestamp(1234567830123),
+		},
+
+		// Microseconds scale
+		{
+			name:     "add to microseconds scale (positive)",
+			ts:       Timestamp(1234567890123456), // microseconds
+			duration: 60 * time.Second,
+			want:     Timestamp(1234567950123456),
+		},
+		{
+			name:     "add to microseconds scale (negative)",
+			ts:       Timestamp(1234567890123456), // microseconds
+			duration: -60 * time.Second,
+			want:     Timestamp(1234567830123456),
+		},
+
+		// Nanoseconds scale
+		{
+			name:     "add to nanoseconds scale (positive)",
+			ts:       Timestamp(1234567890123456789), // nanoseconds
+			duration: 60 * time.Second,
+			want:     Timestamp(1234567950123456789),
+		},
+		{
+			name:     "add to nanoseconds scale (negative)",
+			ts:       Timestamp(1234567890123456789), // nanoseconds
+			duration: -60 * time.Second,
+			want:     Timestamp(1234567830123456789),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.ts.Add(tt.duration)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+func TestTimestamp_Time(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		timestamp Timestamp
+		want      time.Time
+	}{
+		{
+			name:      "seconds scale",
+			timestamp: Timestamp(1234567890),
+			want:      time.Unix(1234567890, 0),
+		},
+		{
+			name:      "milliseconds scale",
+			timestamp: Timestamp(1234567890123),
+			want:      time.Unix(1234567890, 123000000),
+		},
+		{
+			name:      "microseconds scale",
+			timestamp: Timestamp(1234567890123456),
+			want:      time.Unix(1234567890, 123456000),
+		},
+		{
+			name:      "nanoseconds scale",
+			timestamp: Timestamp(1234567890123456789),
+			want:      time.Unix(1234567890, 123456789),
+		},
+		{
+			name:      "zero value",
+			timestamp: Timestamp(0),
+			want:      time.Unix(0, 0),
+		},
+		{
+			name:      "negative value",
+			timestamp: Timestamp(-1234567890),
+			want:      time.Unix(-1234567890, 0),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.timestamp.Time()
+			require.Equal(t, tt.want, got)
+		})
+	}
+}

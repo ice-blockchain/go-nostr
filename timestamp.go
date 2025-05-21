@@ -20,11 +20,29 @@ func Now() Timestamp {
 }
 
 func (t Timestamp) Time() time.Time {
-	return time.Unix(int64(t), 0)
+	switch {
+	case t < 1e10: // Seconds.
+		return time.Unix(int64(t), 0)
+	case t < 1e13: // Milliseconds.
+		return time.Unix(int64(t)/1000, (int64(t)%1000)*1e6)
+	case t < 1e16: // Microseconds.
+		return time.Unix(int64(t)/1e6, (int64(t)%1e6)*1e3)
+	default: // Nanoseconds.
+		return time.Unix(int64(t)/1e9, int64(t)%1e9)
+	}
 }
 
 func (t Timestamp) Add(d time.Duration) Timestamp {
-	return Timestamp(int64(t) + int64(d.Seconds()))
+	switch {
+	case t < 1e10: // Seconds.
+		return Timestamp(t.Time().Add(d).Unix())
+	case t < 1e13: // Milliseconds.
+		return Timestamp(t.Time().Add(d).UnixMilli())
+	case t < 1e16: // Microseconds.
+		return Timestamp(t.Time().Add(d).UnixMicro())
+	default: // Nanoseconds.
+		return Timestamp(t.Time().Add(d).UnixNano())
+	}
 }
 
 func (t *Timestamp) Scan(src any) error {
