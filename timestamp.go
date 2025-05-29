@@ -48,7 +48,7 @@ func (t Timestamp) Equal(other Timestamp) bool {
 }
 
 func (t Timestamp) Set(tm time.Time) Timestamp {
-	return Timestamp(tm.UnixMilli())
+	return Timestamp(tm.UnixNano())
 }
 
 func (t Timestamp) Time() time.Time {
