@@ -84,10 +84,10 @@ func (t *Timestamp) Scan(src any) error {
 	case int64:
 		*t = Timestamp(v)
 	case time.Time:
-		*t = Timestamp(v.Unix())
+		*t = Timestamp(v.UnixNano())
 	case *time.Time:
 		if v != nil {
-			*t = Timestamp(v.Unix())
+			*t = Timestamp(v.UnixNano())
 		} else {
 			*t = 0
 		}
