@@ -266,3 +266,119 @@ func TestTimestamp_Parse(t *testing.T) {
 		})
 	}
 }
+func TestTimestamp_Comparisons(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		ts1      Timestamp
+		ts2      Timestamp
+		isAfter  bool
+		isBefore bool
+		isEqual  bool
+	}{
+		// Equal timestamps at different scales
+		{
+			name:     "equal timestamps (seconds)",
+			ts1:      Timestamp(1234567890),
+			ts2:      Timestamp(1234567890),
+			isAfter:  false,
+			isBefore: false,
+			isEqual:  true,
+		},
+		{
+			name:     "equal timestamps (milliseconds)",
+			ts1:      Timestamp(1234567890123),
+			ts2:      Timestamp(1234567890123),
+			isAfter:  false,
+			isBefore: false,
+			isEqual:  true,
+		},
+		{
+			name:     "equal timestamps (microseconds)",
+			ts1:      Timestamp(1234567890123456),
+			ts2:      Timestamp(1234567890123456),
+			isAfter:  false,
+			isBefore: false,
+			isEqual:  true,
+		},
+		{
+			name:     "equal timestamps (nanoseconds)",
+			ts1:      Timestamp(1234567890123456789),
+			ts2:      Timestamp(1234567890123456789),
+			isAfter:  false,
+			isBefore: false,
+			isEqual:  true,
+		},
+
+		// After/Before relationships at same scale
+		{
+			name:     "ts1 after ts2 (seconds)",
+			ts1:      Timestamp(1234567891),
+			ts2:      Timestamp(1234567890),
+			isAfter:  true,
+			isBefore: false,
+			isEqual:  false,
+		},
+		{
+			name:     "ts1 before ts2 (seconds)",
+			ts1:      Timestamp(1234567889),
+			ts2:      Timestamp(1234567890),
+			isAfter:  false,
+			isBefore: true,
+			isEqual:  false,
+		},
+
+		// Comparison across different scales
+		{
+			name:     "compare seconds and milliseconds (equal)",
+			ts1:      Timestamp(1234567890),
+			ts2:      Timestamp(1234567890000),
+			isAfter:  false,
+			isBefore: false,
+			isEqual:  true,
+		},
+		{
+			name:     "compare seconds and milliseconds (after)",
+			ts1:      Timestamp(1234567891),
+			ts2:      Timestamp(1234567890999),
+			isAfter:  true,
+			isBefore: false,
+			isEqual:  false,
+		},
+		{
+			name:     "compare milliseconds and microseconds (equal)",
+			ts1:      Timestamp(1234567890123),
+			ts2:      Timestamp(1234567890123000),
+			isAfter:  false,
+			isBefore: false,
+			isEqual:  true,
+		},
+
+		// Edge cases
+		{
+			name:     "zero values",
+			ts1:      Timestamp(0),
+			ts2:      Timestamp(0),
+			isAfter:  false,
+			isBefore: false,
+			isEqual:  true,
+		},
+		{
+			name:     "zero and non-zero",
+			ts1:      Timestamp(0),
+			ts2:      Timestamp(1),
+			isAfter:  false,
+			isBefore: true,
+			isEqual:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.isAfter, tt.ts1.After(tt.ts2), "After() returned incorrect result")
+			require.Equal(t, tt.isBefore, tt.ts1.Before(tt.ts2), "Before() returned incorrect result")
+			require.Equal(t, tt.isEqual, tt.ts1.Equal(tt.ts2), "Equal() returned incorrect result")
+		})
+	}
+}

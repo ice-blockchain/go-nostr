@@ -35,6 +35,22 @@ func ParseTimestamp(s string) (Timestamp, error) {
 	return Timestamp(value), nil
 }
 
+func (t Timestamp) After(other Timestamp) bool {
+	return t.Time().After(other.Time())
+}
+
+func (t Timestamp) Before(other Timestamp) bool {
+	return t.Time().Before(other.Time())
+}
+
+func (t Timestamp) Equal(other Timestamp) bool {
+	return t.Time().Equal(other.Time())
+}
+
+func (t Timestamp) Set(tm time.Time) Timestamp {
+	return Timestamp(tm.UnixMilli())
+}
+
 func (t Timestamp) Time() time.Time {
 	switch {
 	case t < 1e10: // Seconds.
