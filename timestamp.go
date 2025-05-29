@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -17,6 +18,21 @@ type Timestamp int64
 
 func Now() Timestamp {
 	return Timestamp(time.Now().Unix())
+}
+
+func (t Timestamp) String() string {
+	return strconv.FormatInt(int64(t), 10)
+}
+
+func ParseTimestamp(s string) (Timestamp, error) {
+	value, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %s", ErrInvalidTimestamp, s)
+	}
+	if value < 0 {
+		return 0, fmt.Errorf("%w: negative value %d", ErrInvalidTimestamp, value)
+	}
+	return Timestamp(value), nil
 }
 
 func (t Timestamp) Time() time.Time {

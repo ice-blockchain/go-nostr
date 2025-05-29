@@ -188,3 +188,81 @@ func TestTimestamp_Time(t *testing.T) {
 		})
 	}
 }
+func TestTimestamp_Parse(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   string
+		want    Timestamp
+		wantErr bool
+	}{
+		{
+			name:    "valid timestamp",
+			input:   "1234567890",
+			want:    Timestamp(1234567890),
+			wantErr: false,
+		},
+		{
+			name:    "empty input",
+			input:   "",
+			wantErr: true,
+		},
+		{
+			name:    "zero timestamp",
+			input:   "0",
+			want:    Timestamp(0),
+			wantErr: false,
+		},
+		{
+			name:    "large valid timestamp",
+			input:   "9223372036854775807", // max int64
+			want:    Timestamp(9223372036854775807),
+			wantErr: false,
+		},
+		{
+			name:    "negative timestamp",
+			input:   "-123",
+			want:    Timestamp(0),
+			wantErr: true,
+		},
+		{
+			name:    "non-integer string",
+			input:   "not a number",
+			want:    Timestamp(0),
+			wantErr: true,
+		},
+		{
+			name:    "empty string",
+			input:   "",
+			want:    Timestamp(0),
+			wantErr: true,
+		},
+		{
+			name:    "floating point number",
+			input:   "123.456",
+			want:    Timestamp(0),
+			wantErr: true,
+		},
+		{
+			name:    "too large number",
+			input:   "9223372036854775808", // max int64 + 1
+			want:    Timestamp(0),
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseTimestamp(tt.input)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrInvalidTimestamp)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
