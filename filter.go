@@ -143,8 +143,30 @@ func (ef Filter) matchesTagSet(tag Tag, values TagValues) bool {
 	return true
 }
 
+func (ef Filter) matchesKind(kind int) bool {
+	if len(ef.Kinds) == 0 {
+		return true // No kind filter means all kinds match.
+	}
+
+	for _, k := range ef.Kinds {
+		if k < 0 {
+			// Negative kind, must not equal the given kind.
+			if k == -kind {
+				return false
+			}
+		} else {
+			if k == kind {
+				return true // Found a matching kind.
+			}
+		}
+	}
+
+	return false
+}
+
 // MatchesIgnoringTimestampConstraints checks if an event matches this filter's criteria, excluding any timestamp-based filters.
 // The function performs exact matching on IDs, Kinds, Authors and Tags.
+// Kinds could be a list of integers, where negative values indicate that the event must not match that kind.
 // For tags, it uses a two-dimensional matching approach where:
 // - The outer dimension (different tag value sets) are matched using OR logic
 // - The inner dimension (values within a tag value set) are matched using AND logic
@@ -164,7 +186,7 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 		return false
 	}
 
-	if ef.Kinds != nil && !slices.Contains(ef.Kinds, event.Kind) {
+	if ef.Kinds != nil && !ef.matchesKind(event.Kind) {
 		return false
 	}
 
