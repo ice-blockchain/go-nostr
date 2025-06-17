@@ -63,7 +63,7 @@ func TestTimestamp_Scan(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tt.want, ts)
+				require.True(t, tt.want.Equal(ts), "expected %v, got %v", tt.want, ts)
 			}
 		})
 	}

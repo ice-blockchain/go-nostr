@@ -413,3 +413,46 @@ func TestFilterAddressMatch(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterKindMatches(t *testing.T) {
+	t.Parallel()
+
+	var cases = []struct {
+		Filter Filter
+		Event  Event
+		Match  bool
+	}{
+		{
+			Filter: Filter{
+				Kinds: []int{KindTextNote, KindRecommendServer},
+			},
+			Event: Event{
+				Kind: KindTextNote,
+			},
+			Match: true,
+		},
+		{
+			Filter: Filter{
+				Kinds: []int{KindTextNote, KindRecommendServer},
+			},
+			Event: Event{
+				Kind: KindEncryptedDirectMessage,
+			},
+		},
+		{
+			Filter: Filter{
+				Kinds: []int{-KindTextNote},
+			},
+			Event: Event{
+				Kind: KindTextNote,
+			},
+			Match: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.Filter.String(), func(t *testing.T) {
+			r := c.Filter.Matches(&c.Event)
+			require.Equalf(t, c.Match, r, "event: %+v", c.Event)
+		})
+	}
+}
