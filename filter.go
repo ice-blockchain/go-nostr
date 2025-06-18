@@ -131,7 +131,7 @@ func (ef Filter) Matches(event *Event) bool {
 	return true
 }
 
-func (ef Filter) matchesTagSet(tag Tag, values TagValues) bool {
+func (ef Filter) MatchesTagSet(tag Tag, values TagValues) bool {
 	for i, value := range values {
 		if value == nil {
 			continue
@@ -206,7 +206,7 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 		}
 		hasSetMatch := len(sets) == 0
 		for _, filterValues := range sets {
-			hasSetMatch = hasSetMatch || ef.matchesTagSet(tag[1:], filterValues)
+			hasSetMatch = hasSetMatch || ef.MatchesTagSet(tag[1:], filterValues)
 		}
 		if !hasSetMatch {
 			continue
