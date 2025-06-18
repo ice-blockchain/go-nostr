@@ -143,7 +143,7 @@ func (ef Filter) MatchesTagSet(tag Tag, values TagValues) bool {
 	return true
 }
 
-func (ef Filter) matchesKind(kind int) bool {
+func (ef Filter) MatchesKind(kind int) bool {
 	if len(ef.Kinds) == 0 {
 		return true // No kind filter means all kinds match.
 	}
@@ -186,7 +186,7 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 		return false
 	}
 
-	if ef.Kinds != nil && !ef.matchesKind(event.Kind) {
+	if ef.Kinds != nil && !ef.MatchesKind(event.Kind) {
 		return false
 	}
 
