@@ -164,6 +164,31 @@ func (ef Filter) MatchesKind(kind int) bool {
 	return false
 }
 
+func (ef Filter) MatchesTags(tags Tags) bool {
+	if len(ef.Tags) == 0 {
+		return true // No tag filter means all tags match.
+	} else if len(tags) == 0 {
+		return false // If there are tags in the filter, but none in the event, it doesn't match.
+	}
+
+	wantTags := maps.Clone(ef.Tags)
+	for _, tag := range tags {
+		sets, ok := wantTags[tag.Key()]
+		if !ok {
+			continue
+		}
+		hasSetMatch := len(sets) == 0
+		for _, filterValues := range sets {
+			hasSetMatch = hasSetMatch || ef.MatchesTagSet(tag[1:], filterValues)
+		}
+		if !hasSetMatch {
+			continue
+		}
+		delete(wantTags, tag.Key())
+	}
+	return len(wantTags) == 0
+}
+
 // MatchesIgnoringTimestampConstraints checks if an event matches this filter's criteria, excluding any timestamp-based filters.
 // The function performs exact matching on IDs, Kinds, Authors and Tags.
 // Kinds could be a list of integers, where negative values indicate that the event must not match that kind.
@@ -198,22 +223,11 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *Event) bool {
 		return false
 	}
 
-	wantTags := maps.Clone(ef.Tags)
-	for _, tag := range event.Tags {
-		sets, ok := wantTags[tag.Key()]
-		if !ok {
-			continue
-		}
-		hasSetMatch := len(sets) == 0
-		for _, filterValues := range sets {
-			hasSetMatch = hasSetMatch || ef.MatchesTagSet(tag[1:], filterValues)
-		}
-		if !hasSetMatch {
-			continue
-		}
-		delete(wantTags, tag.Key())
+	if ef.Tags != nil && !ef.MatchesTags(event.Tags) {
+		return false
 	}
-	return len(wantTags) == 0
+
+	return true
 }
 
 func FilterEqual(a Filter, b Filter) bool {
