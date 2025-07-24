@@ -456,3 +456,29 @@ func TestFilterKindMatches(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterMatchOutOfBonds(t *testing.T) {
+	t.Parallel()
+
+	var ev1 Event
+	ev1.Kind = KindGiftWrap
+	ev1.Tags = []Tag{
+		{"k", "30014"},
+	}
+
+	var ev2 Event
+	ev2.Kind = KindGiftWrap
+	ev2.Tags = []Tag{
+		{"k", "30014", "1755"},
+	}
+
+	filter := &Filter{
+		Kinds: []int{KindGiftWrap},
+		Tags: TagMap{}.
+			Set("k", ptr("30014"), ptr("")).
+			Append("k", ptr("30014"), ptr("1755")),
+	}
+
+	require.True(t, filter.Matches(&ev1), "ev1 should match filter")
+	require.True(t, filter.Matches(&ev2), "ev2 should match filter")
+}
