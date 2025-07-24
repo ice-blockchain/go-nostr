@@ -120,23 +120,32 @@ func (ef Filter) Matches(event *Event) bool {
 		return false
 	}
 
-	if ef.Since != nil && event.CreatedAt < *ef.Since {
+	if ef.Since != nil && event.CreatedAt.Before(*ef.Since) {
 		return false
 	}
 
-	if ef.Until != nil && event.CreatedAt > *ef.Until {
+	if ef.Until != nil && event.CreatedAt.After(*ef.Until) {
 		return false
 	}
 
 	return true
 }
 
+// MatchesTagSet checks if a given tag matches a set of expected values at corresponding positions.
+// It returns true if all non-nil values in the TagValues slice match the corresponding
+// positions in the tag slice.
+// If a value in TagValues is nil, that position is ignored.
+// If the tag slice is shorter than the position being checked, an empty string is used for comparison.
 func (ef Filter) MatchesTagSet(tag Tag, values TagValues) bool {
 	for i, value := range values {
 		if value == nil {
 			continue
 		}
-		if i >= len(tag) || tag[i] != *value {
+		var tagValue string
+		if i < len(tag) {
+			tagValue = tag[i]
+		}
+		if tagValue != *value {
 			return false
 		}
 	}
