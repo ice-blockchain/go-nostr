@@ -259,4 +259,29 @@ func TestEventEnvelopeEncodeDecode(t *testing.T) {
 	})
 }
 
+type fastEnvelope struct {
+	EventEnvelope
+}
+
+func (f *fastEnvelope) Label() string {
+	return "FAST"
+}
+
+func TestEventEnvelopeWithAdditionalEnvelopes(t *testing.T) {
+	t.Parallel()
+
+	const data = `["FAST",{"kind":3,"id":"9e662bdd7d8abc40b5b15ee1ff5e9320efc87e9274d8d440c58e6eed2dddfbe2","pubkey":"373ebe3d45ec91977296a178d9f19f326c70631d2a1b0bbba5c5ecc2eb53b9e7","created_at":1644844224,"tags":[["p","3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"],["p","75fc5ac2487363293bd27fb0d14fb966477d0f1dbc6361d37806a6a740eda91e"],["p","46d0dfd3a724a302ca9175163bdf788f3606b3fd1bb12d5fe055d1e418cb60ea"]],"content":"{\"wss://nostr-pub.wellorder.net\":{\"read\":true,\"write\":true},\"wss://nostr.bitcoiner.social\":{\"read\":false,\"write\":true},\"wss://expensive-relay.fiatjaf.com\":{\"read\":true,\"write\":true},\"wss://relayer.fiatjaf.com\":{\"read\":true,\"write\":true},\"wss://relay.bitid.nz\":{\"read\":true,\"write\":true},\"wss://nostr.rocks\":{\"read\":true,\"write\":true}}","sig":"811355d3484d375df47581cb5d66bed05002c2978894098304f20b595e571b7e01b2efd906c5650080ffe49cf1c62b36715698e9d88b9e8be43029a2f3fa66be"}]`
+
+	msg, err := ParseMessage([]byte(data))
+	require.ErrorIs(t, err, ErrMessageUnknown)
+	require.Nil(t, msg)
+
+	msg, err = ParseMessage([]byte(data), &fastEnvelope{})
+	require.NoError(t, err)
+	require.NotNil(t, msg)
+	require.Equal(t, "FAST", msg.Label())
+	require.IsType(t, &fastEnvelope{}, msg)
+	require.Equal(t, "9e662bdd7d8abc40b5b15ee1ff5e9320efc87e9274d8d440c58e6eed2dddfbe2", msg.(*fastEnvelope).Events[0].ID)
+}
+
 func ptr[S any](s S) *S { return &s }

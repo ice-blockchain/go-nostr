@@ -17,7 +17,7 @@ var (
 	ErrMessageParse   = errors.New("parse message")
 )
 
-func ParseMessage(message []byte) (Envelope, error) {
+func ParseMessage(message []byte, additionalEnvelopes ...Envelope) (Envelope, error) {
 	firstComma := bytes.Index(message, []byte{','})
 	if firstComma == -1 {
 		return nil, ErrMessageUnknown
@@ -48,7 +48,16 @@ func ParseMessage(message []byte) (Envelope, error) {
 		x := CloseEnvelope("")
 		v = &x
 	default:
-		return nil, ErrMessageUnknown
+		for _, envelope := range additionalEnvelopes {
+			if bytes.Contains(label, []byte(envelope.Label())) {
+				v = envelope
+				break
+			}
+		}
+	}
+
+	if v == nil {
+		return nil, fmt.Errorf("%w: %s", ErrMessageUnknown, label)
 	}
 
 	if err := v.UnmarshalJSON(message); err != nil {
