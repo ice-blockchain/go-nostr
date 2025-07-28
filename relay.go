@@ -321,6 +321,26 @@ func (r *Relay) Publish(ctx context.Context, event Event) error {
 	return r.publish(ctx, event.ID, &EventEnvelope{Events: []*Event{&event}})
 }
 
+// PublishEnvelope sends an envelope to the relay r and does not wait for the response.
+// This is an extension, not part of NIP-01.
+func (r *Relay) PublishEnvelope(ctx context.Context, e Envelope) error {
+	envb, err := e.MarshalJSON()
+	if err != nil {
+		return fmt.Errorf("error marshaling envelope: %w", err)
+	}
+	select {
+	case err := <-r.Write(envb):
+		if err != nil {
+			return fmt.Errorf("error writing envelope: %w", err)
+		}
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-r.connectionContext.Done():
+		return fmt.Errorf("connection closed")
+	}
+	return nil
+}
+
 // PublishMany sends n "EVENTS" command to the relay r and waits for an OK response for each.
 // This function is an extension. It is not part of the NIP-01 specification.
 func (r *Relay) PublishMany(ctx context.Context, events ...*Event) error {

@@ -275,3 +275,29 @@ func TestPublishMany(t *testing.T) {
 
 	require.True(t, <-ch, "fake relay server saw no events")
 }
+
+func TestPublishGenericEnvelope(t *testing.T) {
+	t.Parallel()
+
+	var ev fastEnvelope
+	ev.Events = []*Event{
+		{
+			Kind: KindTextNote,
+		},
+	}
+
+	ch := make(chan bool, 1)
+	ws := newWebsocketServer(func(conn *websocket.Conn) {
+		var e fastEnvelope
+
+		err := websocket.JSON.Receive(conn, &e)
+		require.NoError(t, err)
+
+		ch <- len(e.Events) > 0 && e.Events[0].Kind == KindTextNote
+	})
+	defer ws.Close()
+
+	rl := mustRelayConnect(t, ws.URL)
+	require.NoError(t, rl.PublishEnvelope(t.Context(), &ev))
+	require.True(t, <-ch, "fake relay server saw no events")
+}
