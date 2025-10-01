@@ -89,7 +89,7 @@ type EventEnvelope struct {
 	Events         []*Event
 }
 
-func (_ EventEnvelope) Label() string { return "EVENT" }
+func (EventEnvelope) Label() string { return "EVENT" }
 
 func (v EventEnvelope) String() string {
 	j, _ := json.Marshal(v)
@@ -164,7 +164,7 @@ type ReqEnvelope struct {
 	Filters
 }
 
-func (_ ReqEnvelope) Label() string { return "REQ" }
+func (ReqEnvelope) Label() string { return "REQ" }
 
 func (v *ReqEnvelope) UnmarshalJSON(data []byte) error {
 	r := gjson.ParseBytes(data)
@@ -204,7 +204,7 @@ type CountEnvelope struct {
 	HyperLogLog []byte
 }
 
-func (_ CountEnvelope) Label() string { return "COUNT" }
+func (CountEnvelope) Label() string { return "COUNT" }
 func (c CountEnvelope) String() string {
 	v, _ := json.Marshal(c)
 	return string(v)
@@ -275,7 +275,7 @@ func (v CountEnvelope) MarshalJSON() ([]byte, error) {
 
 type NoticeEnvelope string
 
-func (_ NoticeEnvelope) Label() string { return "NOTICE" }
+func (NoticeEnvelope) Label() string { return "NOTICE" }
 func (n NoticeEnvelope) String() string {
 	v, _ := json.Marshal(n)
 	return string(v)
@@ -301,7 +301,7 @@ func (v NoticeEnvelope) MarshalJSON() ([]byte, error) {
 
 type EOSEEnvelope string
 
-func (_ EOSEEnvelope) Label() string { return "EOSE" }
+func (EOSEEnvelope) Label() string { return "EOSE" }
 func (e EOSEEnvelope) String() string {
 	v, _ := json.Marshal(e)
 	return string(v)
@@ -327,7 +327,7 @@ func (v EOSEEnvelope) MarshalJSON() ([]byte, error) {
 
 type CloseEnvelope string
 
-func (_ CloseEnvelope) Label() string { return "CLOSE" }
+func (CloseEnvelope) Label() string { return "CLOSE" }
 func (c CloseEnvelope) String() string {
 	v, _ := json.Marshal(c)
 	return string(v)
@@ -358,7 +358,7 @@ type ClosedEnvelope struct {
 	Reason         string
 }
 
-func (_ ClosedEnvelope) Label() string { return "CLOSED" }
+func (ClosedEnvelope) Label() string { return "CLOSED" }
 func (c ClosedEnvelope) String() string {
 	v, _ := json.Marshal(c)
 	return string(v)
@@ -392,7 +392,7 @@ type OKEnvelope struct {
 	Reason  string
 }
 
-func (_ OKEnvelope) Label() string { return "OK" }
+func (OKEnvelope) Label() string { return "OK" }
 func (o OKEnvelope) String() string {
 	v, _ := json.Marshal(o)
 	return string(v)
@@ -431,7 +431,7 @@ type AuthEnvelope struct {
 	Event     Event
 }
 
-func (_ AuthEnvelope) Label() string { return "AUTH" }
+func (AuthEnvelope) Label() string { return "AUTH" }
 func (a AuthEnvelope) String() string {
 	v, _ := json.Marshal(a)
 	return string(v)

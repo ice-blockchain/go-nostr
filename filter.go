@@ -1,7 +1,6 @@
 package nostr
 
 import (
-	"maps"
 	"slices"
 
 	"github.com/mailru/easyjson"
@@ -180,22 +179,36 @@ func (ef Filter) MatchesTags(tags Tags) bool {
 		return false // If there are tags in the filter, but none in the event, it doesn't match.
 	}
 
-	wantTags := maps.Clone(ef.Tags)
-	for _, tag := range tags {
-		sets, ok := wantTags[tag.Key()]
-		if !ok {
-			continue
+	for filterKey, filterValueSets := range ef.Tags {
+		isKeyRequirementMet := false
+
+		for _, eventTag := range tags {
+			if eventTag.Key() != filterKey {
+				continue
+			}
+
+			if len(filterValueSets) == 0 {
+				isKeyRequirementMet = true
+				break
+			}
+
+			for _, filterValues := range filterValueSets {
+				if ef.MatchesTagSet(eventTag[1:], filterValues) {
+					isKeyRequirementMet = true
+					break
+				}
+			}
+
+			if isKeyRequirementMet {
+				break
+			}
 		}
-		hasSetMatch := len(sets) == 0
-		for _, filterValues := range sets {
-			hasSetMatch = hasSetMatch || ef.MatchesTagSet(tag[1:], filterValues)
+
+		if !isKeyRequirementMet {
+			return false
 		}
-		if !hasSetMatch {
-			continue
-		}
-		delete(wantTags, tag.Key())
 	}
-	return len(wantTags) == 0
+	return true
 }
 
 // MatchesIgnoringTimestampConstraints checks if an event matches this filter's criteria, excluding any timestamp-based filters.

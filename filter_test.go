@@ -482,3 +482,28 @@ func TestFilterMatchOutOfBonds(t *testing.T) {
 	require.True(t, filter.Matches(&ev1), "ev1 should match filter")
 	require.True(t, filter.Matches(&ev2), "ev2 should match filter")
 }
+
+func BenchmarkMatchesTags(b *testing.B) {
+	ev := Event{
+		Tags: Tags{
+			{"e", "tag1", "relay1", "marker1"},
+			{"e", "tag2", "relay2", "marker2"},
+			{"p", "tag3", "relay3"},
+			{"p", "tag4", "relay4"},
+			{"b", "tag5"},
+			{"l", "tag6"},
+		},
+	}
+	f := Filter{
+		Tags: TagMap{}.
+			Set("e", ptr("tag1")).
+			Append("e", nil, nil, ptr("marker2")).
+			Set("p", ptr("tag4")),
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for b.Loop() {
+		v := f.Matches(&ev)
+		require.True(b, v)
+	}
+}
