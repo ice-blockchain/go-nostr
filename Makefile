@@ -3,7 +3,7 @@ all:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go tool gotestsum -f github-actions --packages="./..."
 
 .PHONY: up
 up:
