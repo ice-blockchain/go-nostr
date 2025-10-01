@@ -382,3 +382,93 @@ func TestTimestamp_Comparisons(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkTimestamp(b *testing.B) {
+	valSeconds := Timestamp(time.Now().Unix())
+	valMilliseconds := Timestamp(time.Now().UnixMilli())
+	valMicroseconds := Timestamp(time.Now().UnixMicro())
+	valNanoseconds := Timestamp(time.Now().UnixNano())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.Run("After/seconds-seconds", func(b *testing.B) {
+		for b.Loop() {
+			valSeconds.After(valSeconds)
+		}
+	})
+	b.Run("After/seconds-milliseconds", func(b *testing.B) {
+		for b.Loop() {
+			valSeconds.After(valMilliseconds)
+		}
+	})
+	b.Run("After/seconds-microseconds", func(b *testing.B) {
+		for b.Loop() {
+			valSeconds.After(valMicroseconds)
+		}
+	})
+	b.Run("After/seconds-nanoseconds", func(b *testing.B) {
+		for b.Loop() {
+			valSeconds.After(valNanoseconds)
+		}
+	})
+	b.Run("After/milliseconds-seconds", func(b *testing.B) {
+		for b.Loop() {
+			valMilliseconds.After(valSeconds)
+		}
+	})
+	b.Run("After/milliseconds-milliseconds", func(b *testing.B) {
+		for b.Loop() {
+			valMilliseconds.After(valMilliseconds)
+		}
+	})
+	b.Run("After/milliseconds-microseconds", func(b *testing.B) {
+		for b.Loop() {
+			valMilliseconds.After(valMicroseconds)
+		}
+	})
+	b.Run("After/milliseconds-nanoseconds", func(b *testing.B) {
+		for b.Loop() {
+			valMilliseconds.After(valNanoseconds)
+		}
+	})
+	b.Run("After/microseconds-seconds", func(b *testing.B) {
+		for b.Loop() {
+			valMicroseconds.After(valSeconds)
+		}
+	})
+	b.Run("After/microseconds-milliseconds", func(b *testing.B) {
+		for b.Loop() {
+			valMicroseconds.After(valMilliseconds)
+		}
+	})
+	b.Run("After/microseconds-microseconds", func(b *testing.B) {
+		for b.Loop() {
+			valMicroseconds.After(valMicroseconds)
+		}
+	})
+	b.Run("After/microseconds-nanoseconds", func(b *testing.B) {
+		for b.Loop() {
+			valMicroseconds.After(valNanoseconds)
+		}
+	})
+	b.Run("After/nanoseconds-seconds", func(b *testing.B) {
+		for b.Loop() {
+			valNanoseconds.After(valSeconds)
+		}
+	})
+	b.Run("After/nanoseconds-milliseconds", func(b *testing.B) {
+		for b.Loop() {
+			valNanoseconds.After(valMilliseconds)
+		}
+	})
+	b.Run("After/nanoseconds-microseconds", func(b *testing.B) {
+		for b.Loop() {
+			valNanoseconds.After(valMicroseconds)
+		}
+	})
+	b.Run("After/nanoseconds-nanoseconds", func(b *testing.B) {
+		for b.Loop() {
+			valNanoseconds.After(valNanoseconds)
+		}
+	})
+}

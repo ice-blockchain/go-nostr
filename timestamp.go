@@ -35,16 +35,39 @@ func ParseTimestamp(s string) (Timestamp, error) {
 	return Timestamp(value), nil
 }
 
-func (t Timestamp) After(other Timestamp) bool {
-	return t.Time().After(other.Time())
+func (t Timestamp) UnixSecNsec() (sec int64, nsec int64) {
+	if t < 1e10 { // Seconds.
+		sec = int64(t)
+		nsec = 0
+	} else if t < 1e13 { // Milliseconds.
+		sec = int64(t) / 1000
+		nsec = (int64(t) % 1000) * 1000000000 / 1000 // Simplify: (t % 1000) * 1e6, but written for clarity.
+	} else if t < 1e16 { // Microseconds.
+		sec = int64(t) / 1000000
+		nsec = (int64(t) % 1000000) * 1000
+	} else { // Nanoseconds.
+		sec = int64(t) / 1000000000
+		nsec = int64(t) % 1000000000
+	}
+	return sec, nsec
 }
 
 func (t Timestamp) Before(other Timestamp) bool {
-	return t.Time().Before(other.Time())
+	tSec, tNsec := t.UnixSecNsec()
+	oSec, oNsec := other.UnixSecNsec()
+	return tSec < oSec || (tSec == oSec && tNsec < oNsec)
+}
+
+func (t Timestamp) After(other Timestamp) bool {
+	tSec, tNsec := t.UnixSecNsec()
+	oSec, oNsec := other.UnixSecNsec()
+	return tSec > oSec || (tSec == oSec && tNsec > oNsec)
 }
 
 func (t Timestamp) Equal(other Timestamp) bool {
-	return t.Time().Equal(other.Time())
+	tSec, tNsec := t.UnixSecNsec()
+	oSec, oNsec := other.UnixSecNsec()
+	return tSec == oSec && tNsec == oNsec
 }
 
 func (t Timestamp) Set(tm time.Time) Timestamp {
