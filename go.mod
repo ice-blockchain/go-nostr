@@ -5,27 +5,27 @@ go 1.25.1
 require (
 	filippo.io/edwards25519 v1.1.0
 	github.com/bluekeyes/go-gitdiff v0.8.1
-	github.com/btcsuite/btcd/btcec/v2 v2.3.5
+	github.com/btcsuite/btcd/btcec/v2 v2.3.6
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0
 	github.com/dgraph-io/ristretto/v2 v2.3.0
-	github.com/fiatjaf/eventstore v0.17.2
+	github.com/fiatjaf/eventstore v0.17.5
 	github.com/gobwas/httphead v0.1.0
 	github.com/gobwas/ws v1.4.0
 	github.com/graph-gophers/dataloader/v7 v7.1.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/mailru/easyjson v0.9.1
-	github.com/mattn/go-sqlite3 v1.14.28
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/ncruces/go-sqlite3 v0.25.1
 	github.com/puzpuzpuz/xsync/v3 v3.5.1
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tursodatabase/go-libsql v0.0.0-20250416102726-983f7e9acb0e
-	golang.org/x/crypto v0.42.0
-	golang.org/x/exp v0.0.0-20250911091902-df9299821621
-	golang.org/x/net v0.44.0
-	golang.org/x/text v0.29.0
+	golang.org/x/crypto v0.47.0
+	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
+	golang.org/x/net v0.49.0
+	golang.org/x/text v0.33.0
 	modernc.org/sqlite v1.37.0
 )
 
@@ -56,11 +56,11 @@ require (
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	golang.org/x/mod v0.28.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
-	golang.org/x/term v0.35.0 // indirect
-	golang.org/x/tools v0.37.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/term v0.39.0 // indirect
+	golang.org/x/tools v0.41.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/gotestsum v1.13.0 // indirect
 	modernc.org/libc v1.65.0 // indirect

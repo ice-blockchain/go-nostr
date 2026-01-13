@@ -36,6 +36,7 @@ func parseURL(input string) (*url.URL, error) {
 type options struct {
 	VerificationWindow time.Duration
 	Verificator        func(*nostr.Event) (bool, error)
+	RelayMatcher       func(expected, found *url.URL) bool
 }
 
 // Option is a function that modifies the options.
@@ -49,9 +50,15 @@ func WithVerificationWindow(window time.Duration) func(*options) {
 }
 
 // WithCustomVerificator sets the custom event verification function.
-func WithCustomVerificator(verificator func(*nostr.Event) (bool, error)) func(*options) {
+func WithCustomVerificator(verificator func(*nostr.Event) (bool, error)) Option {
 	return func(o *options) {
 		o.Verificator = verificator
+	}
+}
+
+func WithCustomRelayMatcher(matcher func(expected, found *url.URL) bool) Option {
+	return func(o *options) {
+		o.RelayMatcher = matcher
 	}
 }
 
@@ -61,6 +68,9 @@ func ValidateAuthEvent(event *nostr.Event, challenge string, relayURL string, op
 	var options = options{
 		VerificationWindow: 10 * time.Minute,
 		Verificator:        func(e *nostr.Event) (bool, error) { return e.CheckSignature() },
+		RelayMatcher: func(expected, found *url.URL) bool {
+			return expected.Scheme == found.Scheme && expected.Host == found.Host && expected.Path == found.Path
+		},
 	}
 
 	for _, opt := range opts {
@@ -85,9 +95,7 @@ func ValidateAuthEvent(event *nostr.Event, challenge string, relayURL string, op
 		return "", fmt.Errorf("cannot parse event relay URL: %w", err)
 	}
 
-	if expected.Scheme != found.Scheme ||
-		expected.Host != found.Host ||
-		expected.Path != found.Path {
+	if !options.RelayMatcher(expected, found) {
 		return "", fmt.Errorf("invalid relay URL: %q, expected %q", found.String(), expected.String())
 	}
 
