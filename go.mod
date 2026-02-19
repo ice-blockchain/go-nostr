@@ -3,7 +3,7 @@ module github.com/nbd-wtf/go-nostr
 go 1.25.1
 
 require (
-	filippo.io/edwards25519 v1.1.0
+	filippo.io/edwards25519 v1.1.1
 	github.com/bluekeyes/go-gitdiff v0.8.1
 	github.com/btcsuite/btcd/btcec/v2 v2.3.6
 	github.com/btcsuite/btcd/btcutil v1.1.6
