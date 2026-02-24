@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/puzpuzpuz/xsync/v4"
+
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip05"
 	"github.com/nbd-wtf/go-nostr/nip19"
 	"github.com/nbd-wtf/go-nostr/nip46"
 	"github.com/nbd-wtf/go-nostr/nip49"
-	"github.com/puzpuzpuz/xsync/v3"
 )
 
 var (
@@ -52,7 +53,7 @@ func New(ctx context.Context, pool *nostr.SimplePool, input string, opts *Signer
 			return nil, fmt.Errorf("failed to decrypt with given password: %w", err)
 		}
 		pk, _ := nostr.GetPublicKey(sec)
-		return KeySigner{sec, pk, xsync.NewMapOf[string, [32]byte]()}, nil
+		return KeySigner{sec, pk, xsync.NewMap[string, [32]byte]()}, nil
 	} else if nip46.IsValidBunkerURL(input) || nip05.IsValidIdentifier(input) {
 		bcsk := nostr.GeneratePrivateKey()
 		oa := func(url string) { println("auth_url received but not handled") }
@@ -72,11 +73,11 @@ func New(ctx context.Context, pool *nostr.SimplePool, input string, opts *Signer
 	} else if prefix, parsed, err := nip19.Decode(input); err == nil && prefix == "nsec" {
 		sec := parsed.(string)
 		pk, _ := nostr.GetPublicKey(sec)
-		return KeySigner{sec, pk, xsync.NewMapOf[string, [32]byte]()}, nil
+		return KeySigner{sec, pk, xsync.NewMap[string, [32]byte]()}, nil
 	} else if _, err := hex.DecodeString(input); err == nil && len(input) <= 64 {
 		input = strings.Repeat("0", 64-len(input)) + input // if the key is like '01', fill all the left zeroes
 		pk, _ := nostr.GetPublicKey(input)
-		return KeySigner{input, pk, xsync.NewMapOf[string, [32]byte]()}, nil
+		return KeySigner{input, pk, xsync.NewMap[string, [32]byte]()}, nil
 	}
 
 	return nil, fmt.Errorf("unsupported input '%s'", input)

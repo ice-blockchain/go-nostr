@@ -5,6 +5,8 @@ import (
 	"iter"
 	"slices"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 type Tag []string

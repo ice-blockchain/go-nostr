@@ -3,11 +3,7 @@ package sdk
 import (
 	"slices"
 	"time"
-
-	jsoniter "github.com/json-iterator/go"
 )
-
-var json = jsoniter.ConfigFastest
 
 func appendUnique[I comparable](arr []I, item ...I) []I {
 	for _, item := range item {

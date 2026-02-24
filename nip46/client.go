@@ -8,11 +8,14 @@ import (
 	"strconv"
 	"sync/atomic"
 
+	"github.com/goccy/go-json"
 	"github.com/mailru/easyjson"
+
+	"github.com/puzpuzpuz/xsync/v4"
+
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/nbd-wtf/go-nostr/nip44"
-	"github.com/puzpuzpuz/xsync/v3"
 )
 
 type BunkerClient struct {
@@ -22,8 +25,8 @@ type BunkerClient struct {
 	target          string
 	relays          []string
 	conversationKey [32]byte // nip44
-	listeners       *xsync.MapOf[string, chan Response]
-	expectingAuth   *xsync.MapOf[string, struct{}]
+	listeners       *xsync.Map[string, chan Response]
+	expectingAuth   *xsync.Map[string, struct{}]
 	idPrefix        string
 	onAuth          func(string)
 
@@ -105,8 +108,8 @@ func NewBunker(
 		target:          targetPublicKey,
 		relays:          relays,
 		conversationKey: conversationKey,
-		listeners:       xsync.NewMapOf[string, chan Response](),
-		expectingAuth:   xsync.NewMapOf[string, struct{}](),
+		listeners:       xsync.NewMap[string, chan Response](),
+		expectingAuth:   xsync.NewMap[string, struct{}](),
 		onAuth:          onAuth,
 		idPrefix:        "gn-" + strconv.Itoa(rand.Intn(65536)),
 	}

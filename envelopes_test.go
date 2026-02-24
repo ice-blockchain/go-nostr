@@ -3,6 +3,7 @@ package nostr
 import (
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/require"
 )
 

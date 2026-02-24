@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/goccy/go-json"
 	"github.com/mailru/easyjson"
 	jwriter "github.com/mailru/easyjson/jwriter"
 	"github.com/tidwall/gjson"

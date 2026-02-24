@@ -3,7 +3,6 @@ package nostr
 import (
 	"bytes"
 	"context"
-	stdjson "encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/websocket"
 )
@@ -39,7 +39,7 @@ func TestPublish(t *testing.T) {
 		published = true
 		mu.Unlock()
 		// verify the client sent exactly the textNote
-		var raw []stdjson.RawMessage
+		var raw []json.RawMessage
 		err := websocket.JSON.Receive(conn, &raw)
 		require.NoError(t, err)
 
@@ -71,7 +71,7 @@ func TestPublishBlocked(t *testing.T) {
 	// fake relay server
 	ws := newWebsocketServer(func(conn *websocket.Conn) {
 		// discard received message; not interested
-		var raw []stdjson.RawMessage
+		var raw []json.RawMessage
 		err := websocket.JSON.Receive(conn, &raw)
 		require.NoError(t, err)
 
@@ -204,7 +204,7 @@ func mustRelayConnect(t *testing.T, url string, opts ...RelayOption) *Relay {
 	return rl
 }
 
-func parseEventMessage(t *testing.T, raw []stdjson.RawMessage) Event {
+func parseEventMessage(t *testing.T, raw []json.RawMessage) Event {
 	t.Helper()
 
 	require.GreaterOrEqual(t, len(raw), 2)

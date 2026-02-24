@@ -3,9 +3,10 @@ package keyer
 import (
 	"context"
 
+	"github.com/puzpuzpuz/xsync/v4"
+
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip44"
-	"github.com/puzpuzpuz/xsync/v3"
 )
 
 // Keysigner is a signer that holds the private key in memory and can do all the operations instantly and easily.
@@ -13,7 +14,7 @@ type KeySigner struct {
 	sk string
 	pk string
 
-	conversationKeys *xsync.MapOf[string, [32]byte]
+	conversationKeys *xsync.Map[string, [32]byte]
 }
 
 func NewPlainKeySigner(sec string) (KeySigner, error) {
@@ -21,7 +22,7 @@ func NewPlainKeySigner(sec string) (KeySigner, error) {
 	if err != nil {
 		return KeySigner{}, err
 	}
-	return KeySigner{sec, pk, xsync.NewMapOf[string, [32]byte]()}, nil
+	return KeySigner{sec, pk, xsync.NewMap[string, [32]byte]()}, nil
 }
 
 func (ks KeySigner) SignEvent(ctx context.Context, evt *nostr.Event) error { return evt.Sign(ks.sk) }

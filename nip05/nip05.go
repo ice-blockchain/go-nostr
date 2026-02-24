@@ -7,7 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
+
 	"github.com/nbd-wtf/go-nostr"
 )
 
@@ -81,7 +82,7 @@ func Fetch(ctx context.Context, fullname string) (resp WellKnownResponse, name s
 	defer res.Body.Close()
 
 	var result WellKnownResponse
-	if err := jsoniter.NewDecoder(res.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 		return resp, name, fmt.Errorf("failed to decode json response: %w", err)
 	}
 
