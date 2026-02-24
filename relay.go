@@ -15,7 +15,7 @@ import (
 
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
-	"github.com/puzpuzpuz/xsync/v3"
+	"github.com/puzpuzpuz/xsync/v4"
 )
 
 type Status int
@@ -29,7 +29,7 @@ type Relay struct {
 	RequestHeader http.Header // e.g. for origin header
 
 	Connection    *Connection
-	Subscriptions *xsync.MapOf[int64, *Subscription]
+	Subscriptions *xsync.Map[int64, *Subscription]
 
 	ConnectionError         error
 	connectionContext       context.Context // will be canceled when the connection closes
@@ -38,7 +38,7 @@ type Relay struct {
 	challenge                     string       // NIP-42 challenge, we only keep the last
 	noticeHandler                 func(string) // NIP-01 NOTICEs
 	customHandler                 func([]byte) // nonstandard unparseable messages
-	okCallbacks                   *xsync.MapOf[string, func(bool, string)]
+	okCallbacks                   *xsync.Map[string, func(bool, string)]
 	writeQueue                    chan writeRequest
 	subscriptionChannelCloseQueue chan *Subscription
 
@@ -59,8 +59,8 @@ func NewRelay(ctx context.Context, url string, opts ...RelayOption) *Relay {
 		URL:                           NormalizeURL(url),
 		connectionContext:             ctx,
 		connectionContextCancel:       cancel,
-		Subscriptions:                 xsync.NewMapOf[int64, *Subscription](),
-		okCallbacks:                   xsync.NewMapOf[string, func(bool, string)](),
+		Subscriptions:                 xsync.NewMap[int64, *Subscription](),
+		okCallbacks:                   xsync.NewMap[string, func(bool, string)](),
 		writeQueue:                    make(chan writeRequest),
 		subscriptionChannelCloseQueue: make(chan *Subscription),
 		RequestHeader:                 make(http.Header, 1),
@@ -366,19 +366,19 @@ func (r *Relay) PublishMany(ctx context.Context, events ...*Event) error {
 	done := make(chan struct{})
 	doneOnce := sync.Once{}
 
-	eventIDs := xsync.NewMapOf[string, *Event]()
+	eventIDs := xsync.NewMap[string, *Event]()
 	for _, event := range events {
 		// listen for an OK callback for this event
 		eventIDs.Store(event.ID, event)
 
 		r.okCallbacks.Store(event.ID, func(ok bool, reason string) {
-			eventIDs.Compute(event.ID, func(_ *Event, loaded bool) (_ *Event, delete bool) {
+			eventIDs.Compute(event.ID, func(_ *Event, loaded bool) (_ *Event, op xsync.ComputeOp) {
 				if eventIDs.Size() == 1 {
 					// This is the last event, close the done channel.
 					doneOnce.Do(func() { close(done) })
 				}
 				// Nothing to do here, just delete the event from the map.
-				return nil, true
+				return nil, xsync.DeleteOp
 			})
 
 			// Add the error to the main error if the OK is not true.

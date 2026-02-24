@@ -5,7 +5,7 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,16 +18,16 @@ func TestEventParsingAndVerifying(t *testing.T) {
 	for _, raw := range rawEvents {
 		var ev Event
 		err := json.Unmarshal([]byte(raw), &ev)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.Equal(t, ev.ID, ev.GetID())
+		require.Equal(t, ev.ID, ev.GetID())
 
 		ok, _ := ev.CheckSignature()
-		assert.True(t, ok, "signature verification failed when it should have succeeded")
+		require.True(t, ok, "signature verification failed when it should have succeeded")
 
 		asJSON, err := json.Marshal(ev)
-		assert.NoError(t, err)
-		assert.Equal(t, raw, string(asJSON))
+		require.NoError(t, err)
+		require.Equal(t, raw, string(asJSON))
 	}
 }
 
@@ -46,13 +46,13 @@ func TestEventSerialization(t *testing.T) {
 
 	for _, evt := range events {
 		b, err := json.Marshal(evt)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var re Event
 		err = json.Unmarshal(b, &re)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
-		assert.Condition(t, func() (success bool) {
+		require.Condition(t, func() (success bool) {
 			if evt.ID != re.ID || evt.PubKey != re.PubKey || evt.Content != re.Content ||
 				evt.CreatedAt != re.CreatedAt || evt.Sig != re.Sig ||
 				len(evt.Tags) != len(re.Tags) {
@@ -62,10 +62,10 @@ func TestEventSerialization(t *testing.T) {
 		}, "re-parsed event differs from original")
 
 		for i := range evt.Tags {
-			assert.Equal(t, len(evt.Tags[i]), len(re.Tags[i]), "re-parsed tags %d length differ from original", i)
+			require.Equal(t, len(evt.Tags[i]), len(re.Tags[i]), "re-parsed tags %d length differ from original", i)
 
 			for j := range evt.Tags[i] {
-				assert.Equal(t, re.Tags[i][j], evt.Tags[i][j], "re-parsed tag content %d %d length differ from original", i, j)
+				require.Equal(t, re.Tags[i][j], evt.Tags[i][j], "re-parsed tag content %d %d length differ from original", i, j)
 			}
 		}
 	}

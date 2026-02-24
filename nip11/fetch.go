@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
+
 	"github.com/nbd-wtf/go-nostr"
 )
 
@@ -43,7 +44,7 @@ func Fetch(ctx context.Context, u string) (info RelayInformationDocument, err er
 	}
 	defer resp.Body.Close()
 
-	if err := jsoniter.NewDecoder(resp.Body).Decode(&info); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
 		return info, fmt.Errorf("invalid json: %w", err)
 	}
 

@@ -3,6 +3,7 @@ package nostr
 import (
 	"slices"
 
+	"github.com/goccy/go-json"
 	"github.com/mailru/easyjson"
 )
 

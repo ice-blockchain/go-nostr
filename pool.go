@@ -10,8 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/puzpuzpuz/xsync/v4"
+
 	"github.com/nbd-wtf/go-nostr/nip45/hyperloglog"
-	"github.com/puzpuzpuz/xsync/v3"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 )
 
 type SimplePool struct {
-	Relays  *xsync.MapOf[string, *Relay]
+	Relays  *xsync.Map[string, *Relay]
 	Context context.Context
 
 	authHandler func(context.Context, RelayEvent) error
@@ -55,7 +56,7 @@ func NewSimplePool(ctx context.Context, opts ...PoolOption) *SimplePool {
 	ctx, cancel := context.WithCancel(ctx)
 
 	pool := &SimplePool{
-		Relays: xsync.NewMapOf[string, *Relay](),
+		Relays: xsync.NewMap[string, *Relay](),
 
 		Context: ctx,
 		cancel:  cancel,
@@ -236,7 +237,7 @@ func (pool *SimplePool) subMany(
 	ctx, cancel := context.WithCancel(ctx)
 	_ = cancel // do this so `go vet` will stop complaining
 	events := make(chan RelayEvent)
-	seenAlready := xsync.NewMapOf[string, Timestamp]()
+	seenAlready := xsync.NewMap[string, Timestamp]()
 	ticker := time.NewTicker(seenAlreadyDropTick)
 
 	eose := false
@@ -392,7 +393,7 @@ func (pool *SimplePool) subManyEose(
 	ctx, cancel := context.WithCancel(ctx)
 
 	events := make(chan RelayEvent)
-	seenAlready := xsync.NewMapOf[string, bool]()
+	seenAlready := xsync.NewMap[string, bool]()
 	wg := sync.WaitGroup{}
 	wg.Add(len(urls))
 

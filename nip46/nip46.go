@@ -4,13 +4,13 @@ import (
 	"context"
 	"regexp"
 
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
+
 	"github.com/nbd-wtf/go-nostr"
 )
 
 var (
 	BUNKER_REGEX = regexp.MustCompile(`^bunker:\/\/([0-9a-f]{64})\??([?\/\w:.=&%]*)$`)
-	json         = jsoniter.ConfigFastest
 )
 
 type Request struct {

@@ -3,6 +3,8 @@ package nip46
 import (
 	"fmt"
 
+	"github.com/goccy/go-json"
+
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/nbd-wtf/go-nostr/nip44"
